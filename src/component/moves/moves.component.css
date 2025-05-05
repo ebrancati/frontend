@@ -1,0 +1,17 @@
+.moves {
+  border: 1px solid #ccc;
+  overflow-y: auto;
+  padding: 10px;
+  background: #fafafa;
+  height: 100%;
+}
+
+.moves h4 {
+  margin-top: 0;
+  font-size: 16px;
+}
+
+.moves div {
+  font-size: 14px;
+  margin-bottom: 5px;
+}
