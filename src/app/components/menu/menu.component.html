@@ -1,23 +1,26 @@
 <div class="menu-container">
-    <h2 class="menu-title">seleziona modalità</h2>
-    <div class="button-container">
+    <h2>Seleziona Modalità di Gioco</h2>
+    
+    <div class="menu-buttons">
       <button 
-        class="mode-button" 
+        class="menu-button" 
         [class.selected]="selectedMode === 'online'"
         (click)="selectMode('online')">
-        online
+        Gioca Online
       </button>
+      
       <button 
-        class="mode-button" 
-        [class.selected]="selectedMode === 'locale'"
-        (click)="selectMode('locale')">
-        locale
+        class="menu-button" 
+        [class.selected]="selectedMode === 'local'"
+        (click)="selectMode('local')">
+        Gioca in Locale
       </button>
+      
       <button 
-        class="mode-button" 
+        class="menu-button" 
         [class.selected]="selectedMode === 'bot'"
         (click)="selectMode('bot')">
-        bot
+        Gioca contro il Computer
       </button>
     </div>
-</div>
+  </div>

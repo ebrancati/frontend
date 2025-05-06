@@ -19,7 +19,8 @@ interface TurnMoves {
     NgForOf
   ],
   templateUrl: './moves.component.html',
-  styleUrl: './moves.component.css'
+  styleUrl: './moves.component.css',
+  standalone: true
 })
 export class MovesComponent implements OnChanges {
   @Input() moves: Move[] = [];

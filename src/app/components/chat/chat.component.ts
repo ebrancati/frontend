@@ -9,7 +9,8 @@ import {FormsModule} from '@angular/forms';
     FormsModule
   ],
   templateUrl: './chat.component.html',
-  styleUrl: './chat.component.css'
+  styleUrl: './chat.component.css',
+  standalone: true
 })
 export class ChatComponent {
   messages = [

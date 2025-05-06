@@ -31,7 +31,8 @@ interface Move {
     ChatComponent
   ],
   templateUrl: './board.component.html',
-  styleUrl: './board.component.css'
+  styleUrl: './board.component.css',
+  standalone: true
 })
 export class BoardComponent {
   board: Cell[][] = [];
