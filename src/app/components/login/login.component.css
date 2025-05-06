@@ -1,0 +1,29 @@
+:host {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+.ticket {
+  background: linear-gradient(135deg, #1f1c2c 0%, #928dab 50%, #1f1c2c 100%);
+  border-radius: 1rem;
+  width: 100%;
+  max-width: 600px;
+  min-height: 50vh;
+  padding: 3rem 2rem;
+}
+
+
+.custom-input {
+  border-radius: 2rem;
+  height: 2.2rem;
+  font-size: 1.1rem;
+  padding-left: 1.2rem;
+}
+
+.custom-button {
+  border-radius: 1rem;
+  padding: 0.75rem ;
+  font-size: 1rem;
+}

@@ -1,0 +1,23 @@
+<div class="menu-container">
+    <h2 class="menu-title">seleziona modalità</h2>
+    <div class="button-container">
+      <button 
+        class="mode-button" 
+        [class.selected]="selectedMode === 'online'"
+        (click)="selectMode('online')">
+        online
+      </button>
+      <button 
+        class="mode-button" 
+        [class.selected]="selectedMode === 'locale'"
+        (click)="selectMode('locale')">
+        locale
+      </button>
+      <button 
+        class="mode-button" 
+        [class.selected]="selectedMode === 'bot'"
+        (click)="selectMode('bot')">
+        bot
+      </button>
+    </div>
+</div>

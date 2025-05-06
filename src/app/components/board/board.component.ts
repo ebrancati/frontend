@@ -43,6 +43,11 @@ export class BoardComponent {
   gameOver: boolean = false;
   showGameOverModal: boolean = false;
   winner: 'black' | 'white' | null = null;
+  whiteCount:number = 12;
+  blackCount:number = 12;
+
+  columns: string[] = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
+  rows: string[] = ['8', '7', '6', '5', '4', '3', '2', '1'];
   
   ngOnInit() {
     this.initBoard();
@@ -298,11 +303,11 @@ export class BoardComponent {
     }
     
     // Record the move
-    this.moves.push({
+    this.moves = [...this.moves, {
       from: { row: fromRow, col: fromCol },
       to: { row: toRow, col: toCol },
       captured: isCapture ? [{ row: fromRow + (toRow - fromRow) / 2, col: fromCol + (toCol - fromCol) / 2 }] : undefined
-    });
+    }];
     
     // Check for additional captures from the new position
     const additionalCaptures = this.getCapturesForPiece(toRow, toCol);
@@ -326,27 +331,27 @@ export class BoardComponent {
    */
   checkGameOver(): void {
     // Check if a player has no pieces left
-    let whiteCount = 0;
-    let blackCount = 0;
+    this.whiteCount = 0;
+    this.blackCount = 0;
     
     for (let r = 0; r < 8; r++) {
       for (let c = 0; c < 8; c++) {
         const cell = this.board[r][c];
         if (cell.hasPiece) {
-          if (cell.pieceColor === 'white') whiteCount++;
-          else blackCount++;
+          if (cell.pieceColor === 'white') this.whiteCount++;
+          else this.blackCount++;
         }
       }
     }
     
-    if (whiteCount === 0) {
+    if (this.whiteCount === 0) {
       this.gameOver = true;
       this.winner = 'black'; // Il nero vince se il bianco non ha pezzi
       this.showGameOverModal = true;
       return;
     }
     
-    if (blackCount === 0) {
+    if (this.blackCount === 0) {
       this.gameOver = true;
       this.winner = 'white'; // Il bianco vince se il nero non ha pezzi
       this.showGameOverModal = true;
