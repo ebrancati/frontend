@@ -2,9 +2,9 @@ import { Component, OnInit } from '@angular/core';
 import { FormsModule }      from '@angular/forms';
 import { NgIf }             from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
-import { PlayerService }    from '../services/player.service';
-import { GameService }      from '../services/game.service';
-import { player }           from '../model/player';
+import {PlayerService} from '../../../services/player.service';
+import {GameService} from '../../../services/game.service';
+import {player} from '../../../model/player';
 
 @Component({
   selector: 'app-join',
@@ -69,7 +69,7 @@ export class JoinComponent implements OnInit {
   onJoin() {
     const dto: player = { nickname: this.nickname };
     this.playerSvc.createPlayer(dto).subscribe(() => {
-      this.gameSvc.joinGame(this.gameId, dto).subscribe(gs => {
+      this.gameSvc.joinGame(this.gameId, dto).subscribe(() => {
         // una volta dentro, vai al board
         this.router.navigate(['/board', this.gameId]);
       });
