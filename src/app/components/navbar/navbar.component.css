@@ -1,0 +1,20 @@
+.navbar {
+  background: linear-gradient(135deg, #1f1c2c 0%, #928dab 50%, #1f1c2c 100%);
+}
+.nav-link {
+  margin-left: 0.5rem;
+  margin-right: 0.5rem;
+}
+
+h3 {
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+}
+
+h3 span:first-of-type {
+  color: #66ccff;
+}
+
+h3 span:last-of-type {
+  color: #ff9933;
+}
