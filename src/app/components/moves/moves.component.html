@@ -1,6 +1,19 @@
 <div class="moves">
-  <h4>Mosse Recenti</h4>
-  <div *ngFor="let move of moves">
-    <div>{{ move.turn }}. {{ move.move }}</div>
-  </div>
+  <h4>Mosse</h4>
+  <table class="moves-table">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Bianco</th>
+        <th>Nero</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let turn of displayMoves">
+        <td class="turn-number">{{ turn.number }}.</td>
+        <td class="move-cell">{{ turn.white }}</td>
+        <td class="move-cell">{{ turn.black }}</td>
+      </tr>
+    </tbody>
+  </table>
 </div>

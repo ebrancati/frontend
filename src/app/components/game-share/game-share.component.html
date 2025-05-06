@@ -1,0 +1,14 @@
+<div class="share-container">
+  <p class="share-title">Copia l'URL qui sotto e mandalo ad un tuo amico per avviare la partita</p>
+  
+  <div class="url-container">
+    <input 
+      type="text" 
+      class="url-input" 
+      [value]="gameUrl" 
+      readonly
+      #urlInput
+      (click)="urlInput.select()"
+    >
+  </div>
+</div>

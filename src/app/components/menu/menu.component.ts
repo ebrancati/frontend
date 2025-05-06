@@ -7,7 +7,6 @@ import { Router } from '@angular/router';
   styleUrls: ['./menu.component.css']
 })
 export class MenuComponent {
-
   selectedMode: string | null = null;
 
   constructor(private router: Router) {}

@@ -1,17 +1,50 @@
 .moves {
   border: 1px solid #ccc;
+  border-radius: 5px;
   overflow-y: auto;
   padding: 10px;
   background: #fafafa;
-  height: 100%;
+  height: 250px;
 }
 
 .moves h4 {
   margin-top: 0;
   font-size: 16px;
+  text-align: center;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 8px;
+  margin-bottom: 10px;
 }
 
-.moves div {
+.moves-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.moves-table th {
+  text-align: left;
   font-size: 14px;
-  margin-bottom: 5px;
+  color: #666;
+  padding-bottom: 5px;
+  border-bottom: 1px solid #eee;
+}
+
+.turn-number {
+  color: #999;
+  font-weight: bold;
+  width: 20%;
+}
+
+.move-cell {
+  padding: 4px 0;
+  font-family: monospace;
+  width: 40%;
+}
+
+tbody tr:nth-child(even) {
+  background-color: #f5f5f5;
+}
+
+tbody tr:hover {
+  background-color: #efefef;
 }
