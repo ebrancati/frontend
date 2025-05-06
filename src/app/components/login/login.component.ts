@@ -1,24 +1,46 @@
 import { Component } from '@angular/core';
 import { Router } from '@angular/router';
-import { FormsModule } from '@angular/forms';
+import {GameService} from "../../../services/game.service";
+import {PlayerService} from "../../../services/player.service";
+import { FormsModule, NgForm, NgModel } from '@angular/forms';
+import { NgIf, NgForOf }            from '@angular/common';
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [FormsModule],
+  imports: [
+    FormsModule,  // contiene anche le direttive NgForm e NgModel
+    NgIf,
+    NgForOf,
+
+  ],
   templateUrl: './login.component.html',
-  styleUrls: ['./login.component.css']
 })
 export class LoginComponent {
-  nickname: string = '';
+  nickname = '';
+  joinGameId = '';
 
-  constructor(private router: Router) {}
+  constructor(
+      private playerSvc: PlayerService,
+      private gameSvc: GameService,
+      private router: Router
+  ) {}
 
-  login() {
-    if (this.nickname.trim()) {
-      localStorage.setItem('nickname', this.nickname.trim());
-      this.router.navigate(['/home']);
-    }
+  newGame() {
+    const player = { nickname: this.nickname };
+    this.playerSvc.createPlayer(player).subscribe(() => {
+      this.gameSvc.createGame(player).subscribe(gs => {
+        this.router.navigate(['/board', gs.id]);
+      });
+    });
   }
 
+  join() {
+    const player = { nickname: this.nickname };
+    this.playerSvc.createPlayer(player).subscribe(() => {
+      this.gameSvc.joinGame(this.joinGameId, player).subscribe(gs => {
+        this.router.navigate(['/board', gs.id]);
+      });
+    });
+  }
 }

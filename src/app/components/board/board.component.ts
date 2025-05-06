@@ -1,7 +1,11 @@
-import { Component } from '@angular/core';
+import {Component, Inject} from '@angular/core';
 import { NgClass, NgForOf, NgIf } from '@angular/common';
 import { MovesComponent } from '../moves/moves.component';
 import { ChatComponent } from '../chat/chat.component';
+import {MoveServiceService} from '../../../services/move-service.service';
+import { ActivatedRoute } from '@angular/router';
+import { DOCUMENT } from '@angular/common';
+
 
 /**
  * Interface representing a cell on the checkers board
@@ -31,14 +35,17 @@ interface Move {
     ChatComponent
   ],
   templateUrl: './board.component.html',
-  styleUrl: './board.component.css'
+  styleUrl: './board.component.css',
+  standalone: true
 })
-export class BoardComponent {
+export class BoardComponent{
+  origin: string | undefined
   board: Cell[][] = [];
   highlightedCells: { row: number, col: number }[] = [];
   selectedCell: { row: number, col: number } | null = null;
   currentPlayer: 'black' | 'white' = 'white';
   moves: Move[] = [];
+  gameID:string='';
 
   gameOver: boolean = false;
   showGameOverModal: boolean = false;
@@ -48,8 +55,17 @@ export class BoardComponent {
   columns: string[] = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
   rows: number[] = [1, 2, 3, 4, 5, 6, 7, 8];
 
+
   ngOnInit() {
+    this.gameID = this.route.snapshot.paramMap.get('gameId')!;
     this.initBoard();
+    this.gameID = this.route.snapshot.paramMap.get('gameId')!;
+  }
+  constructor(private moveService: MoveServiceService,
+              private route: ActivatedRoute,
+  @Inject(DOCUMENT) private document: Document
+) {
+    this.origin = this.document.location.origin;
   }
 
   /**
@@ -317,6 +333,12 @@ export class BoardComponent {
       this.selectedCell = null;
       this.highlightedCells = [];
 
+      this.moveService.saveMove({
+        from: this.columns[fromCol] + (8 - fromRow),
+        to:   this.columns[toCol]   + (8 - toRow),
+        player: movingPiece.pieceColor!.toUpperCase()
+      }, this.gameID)
+        .subscribe();
       // Controlla la fine del gioco
       this.checkGameOver();
     }
@@ -402,4 +424,5 @@ export class BoardComponent {
   resetGame(): void {
     this.initBoard();
   }
+
 }

@@ -1,27 +1,50 @@
-<div class="ticket p-5 shadow">
-  <form (ngSubmit)="login()" #f="ngForm">
-    <h3 style="color: #f8d210">Login</h3><br>
-
-    <div class="mb-4">
-      <h3 style="color: #f8d210;" for="username" class="form-label">Inserire nome</h3><br>
-      <input
-        id="nickname"
-        name="nickname"
-        type="text"
-        class="form-control custom-input"
-        placeholder="nickname"
-        required
-        [(ngModel)]="nickname"
-      /><br><br>
+<form #newGameForm="ngForm" (ngSubmit)="newGame()">
+    <div class="mb-3">
+        <label for="nickname" class="form-label">Nickname</label>
+        <input
+                id="nickname"
+                name="nickname"
+                type="text"
+                class="form-control"
+                required
+                [(ngModel)]="nickname"
+                #nick="ngModel"
+        />
+        <div class="form-text text-danger" *ngIf="nick.invalid && nick.touched">
+        </div>
     </div>
+    <button
+            type="submit"
+            class="btn btn-primary"
+            [disabled]="newGameForm.invalid"
+    >
+        Nuova Partita
+    </button>
+</form>
 
-    <div class="d-flex justify-content-end">
-      <button
-        type="submit"
-        class="btn btn-primary custom-button"
-        [disabled]="!f.form.valid">
-        Login
-      </button>
+<hr/>
+
+<form #joinForm="ngForm" (ngSubmit)="join()">
+    <div class="mb-3">
+        <label for="joinGameId" class="form-label">ID Partita</label>
+        <input
+                id="joinGameId"
+                name="joinGameId"
+                type="text"
+                class="form-control"
+                required
+                [(ngModel)]="joinGameId"
+                #gid="ngModel"
+        />
+        <div class="form-text text-danger" *ngIf="gid.invalid && gid.touched">
+            {{ gid.errors?.['required'] ? "L'ID è obbligatorio" : '' }}
+        </div>
     </div>
-  </form>
-</div>
+    <button
+            type="submit"
+            class="btn btn-secondary"
+            [disabled]="joinForm.invalid || nick.invalid"
+    >
+        Partecipa
+    </button>
+</form>
