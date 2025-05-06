@@ -31,7 +31,8 @@ interface Move {
     ChatComponent
   ],
   templateUrl: './board.component.html',
-  styleUrl: './board.component.css'
+  styleUrl: './board.component.css',
+  standalone: true
 })
 export class BoardComponent {
   board: Cell[][] = [];
@@ -45,6 +46,9 @@ export class BoardComponent {
   winner: 'black' | 'white' | null = null;
   whiteCount:number = 12;
   blackCount:number = 12;
+
+  columns: string[] = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
+  rows: string[] = ['8', '7', '6', '5', '4', '3', '2', '1'];
 
   ngOnInit() {
     this.initBoard();
@@ -300,11 +304,11 @@ export class BoardComponent {
     }
 
     // Record the move
-    this.moves.push({
+    this.moves = [...this.moves, {
       from: { row: fromRow, col: fromCol },
       to: { row: toRow, col: toCol },
       captured: isCapture ? [{ row: fromRow + (toRow - fromRow) / 2, col: fromCol + (toCol - fromCol) / 2 }] : undefined
-    });
+    }];
 
     // Check for additional captures from the new position
     const additionalCaptures = this.getCapturesForPiece(toRow, toCol);
@@ -328,9 +332,9 @@ export class BoardComponent {
    */
   checkGameOver(): void {
     // Check if a player has no pieces left
+    this.whiteCount = 0;
+    this.blackCount = 0;
 
-    this.whiteCount=0;
-    this.blackCount=0;
     for (let r = 0; r < 8; r++) {
       for (let c = 0; c < 8; c++) {
         const cell = this.board[r][c];
