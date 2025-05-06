@@ -10,9 +10,11 @@
       </div>
     </div>
 
-    <div class="share-link">
-      <label>Link da condividere</label>
-      <input readonly [value]="origin + '/board/' + gameID" class="form-control"/>
+    <div *ngIf="gameID" class="alert alert-info">
+      Condividi questo link con il tuo avversario:<br>
+      <a [href]="'/join/' + gameID">
+        {{ origin + '/join/' + gameID }}
+      </a>
     </div>
 
     <div class="board-with-coordinates">
