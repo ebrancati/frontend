@@ -1,0 +1,27 @@
+<div class="ticket p-5 shadow">
+  <form (ngSubmit)="login()" #f="ngForm">
+    <h3 style="color: #f8d210">Login</h3><br>
+
+    <div class="mb-4">
+      <h3 style="color: #f8d210   ;" for="username" class="form-label">Inserire nome</h3><br>
+      <input
+        id="nickname"
+        name="nickname"
+        type="text"
+        class="form-control custom-input"
+        placeholder="nickname"
+        required
+        [(ngModel)]="nickname"
+      /><br><br>
+    </div>
+
+    <div class="d-flex justify-content-end">
+      <button
+        type="submit"
+        class="btn btn-primary custom-button"
+        [disabled]="!f.form.valid">
+        Login
+      </button>
+    </div>
+  </form>
+</div>
