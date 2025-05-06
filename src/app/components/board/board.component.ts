@@ -45,6 +45,8 @@ export class BoardComponent {
   winner: 'black' | 'white' | null = null;
   whiteCount:number = 12;
   blackCount:number = 12;
+  columns: string[] = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
+  rows: number[] = [1, 2, 3, 4, 5, 6, 7, 8];
 
   ngOnInit() {
     this.initBoard();
@@ -64,7 +66,6 @@ export class BoardComponent {
       [ "", "w", "", "w", "", "w", "", "w" ],
       [ "w", "", "w", "", "w", "", "w", "" ],
     ];
-
     this.board = initialData.map(row =>
       row.map(cell => ({
         hasPiece: cell === 'b' || cell === 'w',
