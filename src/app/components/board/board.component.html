@@ -10,14 +10,6 @@
       </div>
     </div>
 
-    <div class="status-info">
-      <div class="current-player">
-        Turno: {{ currentPlayer === 'white' ? 'Bianco' : 'Nero' }} <br>
-        Bianchi rimanenti: {{whiteCount}} <br>
-        Neri rimanenti: {{blackCount}}
-      </div>
-    </div>
-
     <div class="board-with-coordinates">
       <!-- Coordinate lettere (colonne) in alto -->
       <div class="column-labels">
@@ -59,5 +51,12 @@
   <div class="side-panel">
     <app-moves [moves]="moves"></app-moves>
     <app-chat></app-chat>
+    <div class="status-info">
+      <div class="current-player">
+        Turno: {{ currentPlayer === 'white' ? 'Bianco' : 'Nero' }} <br>
+        Bianchi rimanenti: {{whiteCount}} <br>
+        Neri rimanenti: {{blackCount}}
+      </div>
+    </div>
   </div>
 </div>

@@ -13,7 +13,7 @@ export class MenuComponent {
 
   selectMode(mode: string): void {
     this.selectedMode = mode;
-    
+
     // Naviga alle pagine appropriate in base alla modalità selezionata
     switch (mode) {
       case 'online':
@@ -24,7 +24,7 @@ export class MenuComponent {
         this.router.navigate(['/home']);
         break;
     }
-    
+
     console.log('Selected mode:', mode);
   }
 }
