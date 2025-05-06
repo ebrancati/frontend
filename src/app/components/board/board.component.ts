@@ -261,13 +261,10 @@ export class BoardComponent {
    * @param toCol - Destination column
    */
   makeMove(fromRow: number, fromCol: number, toRow: number, toCol: number): void {
-    // Check if this is a capture move
     const isCapture = Math.abs(fromRow - toRow) === 2 && Math.abs(fromCol - toCol) === 2;
-
-    // Update the board
     const movingPiece = this.board[fromRow][fromCol];
 
-    // Make the move
+    // Esegui il movimento
     this.board[toRow][toCol] = {
       hasPiece: true,
       pieceColor: movingPiece.pieceColor,
@@ -279,7 +276,6 @@ export class BoardComponent {
       isKing: false
     };
 
-    // Handle captures
     let capturedPiece = null;
     if (isCapture) {
       const captureRow = fromRow + (toRow - fromRow) / 2;
@@ -292,34 +288,36 @@ export class BoardComponent {
       };
     }
 
-    // Check for king promotion
+    // Promozione del re
     if (!movingPiece.isKing) {
       if ((movingPiece.pieceColor === 'white' && toRow === 0) ||
-          (movingPiece.pieceColor === 'black' && toRow === 7)) {
+        (movingPiece.pieceColor === 'black' && toRow === 7)) {
         this.board[toRow][toCol].isKing = true;
       }
     }
 
-    // Record the move
+    // Aggiungi la mossa
     this.moves.push({
       from: { row: fromRow, col: fromCol },
       to: { row: toRow, col: toCol },
       captured: isCapture ? [{ row: fromRow + (toRow - fromRow) / 2, col: fromCol + (toCol - fromCol) / 2 }] : undefined
     });
+    this.moves = [...this.moves];
 
-    // Check for additional captures from the new position
+    // Verifica se ci sono altre catture
     const additionalCaptures = this.getCapturesForPiece(toRow, toCol);
+
+    // Non cambiare il turno se ci sono altre catture disponibili
     if (isCapture && additionalCaptures.length > 0) {
-      // We have more captures available for this piece
       this.selectedCell = { row: toRow, col: toCol };
       this.highlightedCells = additionalCaptures.map(move => move.to);
     } else {
-      // Switch to the next player
+      // Cambia turno
       this.currentPlayer = this.currentPlayer === 'white' ? 'black' : 'white';
       this.selectedCell = null;
       this.highlightedCells = [];
 
-      // Check for game over
+      // Controlla la fine del gioco
       this.checkGameOver();
     }
   }
