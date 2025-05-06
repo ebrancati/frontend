@@ -334,9 +334,9 @@ export class BoardComponent{
       this.highlightedCells = [];
 
       this.moveService.saveMove({
-        from: this.columns[fromCol] + (8 - fromRow),
-        to:   this.columns[toCol]   + (8 - toRow),
-        player: movingPiece.pieceColor!.toUpperCase()
+        from:""+ this.columns[fromCol] + (8 - fromRow),
+        to: ""+  this.columns[toCol]   + (8 - toRow),
+        player:""+ movingPiece.pieceColor!.toUpperCase()
       }, this.gameID)
         .subscribe();
       // Controlla la fine del gioco
