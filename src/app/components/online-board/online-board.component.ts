@@ -60,6 +60,7 @@ interface Move {
   standalone: true
 })
 export class OnlineBoardComponent implements OnInit, OnDestroy {
+  private captureChainStart: { row: number; col: number } | null = null;
   origin: string | undefined
   board: Cell[][] = [];
   highlightedCells: { row: number, col: number }[] = [];
@@ -426,87 +427,51 @@ export class OnlineBoardComponent implements OnInit, OnDestroy {
    * @param toCol - Destination column
    */
   makeMove(fromRow: number, fromCol: number, toRow: number, toCol: number): void {
-    // Double-check that it's the player's turn
     if (!this.isPlayerTurn()) return;
 
     const isCapture = Math.abs(fromRow - toRow) === 2 && Math.abs(fromCol - toCol) === 2;
     const movingPiece = this.board[fromRow][fromCol];
 
-    // Esegui il movimento
-    this.board[toRow][toCol] = {
-      hasPiece: true,
-      pieceColor: movingPiece.pieceColor,
-      isKing: movingPiece.isKing
-    };
-    this.board[fromRow][fromCol] = {
-      hasPiece: false,
-      pieceColor: null,
-      isKing: false
-    };
+    // sposta su UI (locale)
+    this.board[toRow][toCol] = { ...movingPiece };
+    this.board[fromRow][fromCol] = { hasPiece: false, pieceColor: null, isKing: false };
 
-    let capturedPiece = null;
-    if (isCapture) {
-      const captureRow = fromRow + (toRow - fromRow) / 2;
-      const captureCol = fromCol + (toCol - fromCol) / 2;
-      capturedPiece = this.board[captureRow][captureCol];
-      this.board[captureRow][captureCol] = {
-        hasPiece: false,
-        pieceColor: null,
-        isKing: false
-      };
-    }
+    // verifica se ci sono altre catture da questa casella
+    const further = this.getCapturesForPiece(toRow, toCol);
 
-    // Promozione del re
-    if (!movingPiece.isKing) {
-      if ((movingPiece.pieceColor === 'white' && toRow === 0) ||
-        (movingPiece.pieceColor === 'black' && toRow === 7)) {
-        this.board[toRow][toCol].isKing = true;
+    if (isCapture && further.length > 0) {
+      // inizio o continua la catena: mantieni il punto di partenza originario
+      if (!this.captureChainStart) {
+        this.captureChainStart = { row: fromRow, col: fromCol };
       }
-    }
-
-    // Aggiungi la mossa
-    this.moves.push({
-      from: { row: fromRow, col: fromCol },
-      to: { row: toRow, col: toCol },
-      captured: isCapture ? [{ row: fromRow + (toRow - fromRow) / 2, col: fromCol + (toCol - fromCol) / 2 }] : undefined
-    });
-    this.moves = [...this.moves];
-
-    // Verifica se ci sono altre catture
-    const additionalCaptures = this.getCapturesForPiece(toRow, toCol);
-
-    // Non cambiare il turno se ci sono altre catture disponibili
-    if (isCapture && additionalCaptures.length > 0) {
+      // prepara click successivo sulla pedina catturata per continuare
       this.selectedCell = { row: toRow, col: toCol };
-      this.highlightedCells = additionalCaptures.map(move => move.to);
+      this.highlightedCells = further.map(m => m.to);
+
     } else {
-      // Cambia turno localmente
-      this.currentPlayer = this.currentPlayer === 'white' ? 'black' : 'white';
+      // mossa singola o fine della catena di cattura
+
+      // determina l'origine: o catenaStart, o mossa singola
+      const start = this.captureChainStart || { row: fromRow, col: fromCol };
+      const payload: MoveP = {
+        from: `${start.row}${start.col}`,
+        to: `${toRow}${toCol}`,
+        player: movingPiece.pieceColor!
+      };
+
+      // invia un'unica chiamata che copre tutta la catena
+      this.moveService.saveMove(payload, this.gameID).subscribe({
+        next: res => this.updateGameState(res),
+        error: err => console.error('Errore salvataggio mossa', err)
+      });
+
+      // pulisci stato catena e highlights
+      this.captureChainStart = null;
       this.selectedCell = null;
       this.highlightedCells = [];
 
-      // Invia la mossa al server
-      // invece di usare colonne+numeri “da scacchiera” fai proprio riga+colonna
-      const payload: MoveP = {
-        from: `${fromRow}${fromCol}`,   // es. "20"
-        to:   `${toRow}${toCol}`,       // es. "31"
-        player: movingPiece.pieceColor! // "white" o "black"
-      };
-
-      this.moveService.saveMove(payload, this.gameID)
-        .subscribe({
-          next: (res) => {
-            console.log('GameDto:', res);
-            this.updateGameState(res);
-          },
-          error: err => {
-            console.error('Errore nel salvataggio della mossa', err);
-            // qui puoi fare rollback o mostrare un messaggio
-          }
-        });
-
-
-      // Controlla la fine del gioco
+      // cambia turno e controlla fine partita
+      this.currentPlayer = this.currentPlayer === 'white' ? 'black' : 'white';
       this.checkGameOver();
     }
   }
