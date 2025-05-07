@@ -12,4 +12,5 @@ export class PlayerService {
   createPlayer(nickname: player){
     return this.http.post<player>(`/api/players/create`, nickname);
   }
+
 }

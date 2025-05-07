@@ -22,10 +22,13 @@ import {switchMap} from 'rxjs';
           <input name="nick" class="form-control"
                  required minlength="3"
                  [(ngModel)]="nickname" #nick="ngModel">
-          <div *ngIf="nick.invalid && nick.touched" class="text-danger">
-            {{ nick.errors?.['required'] ? 'Obbligatorio' : '' }}
-            {{ nick.errors?.['minlength'] ? 'Minimo 3 caratteri' : '' }}
-          </div>
+          <!--
+            <div *ngIf="nick.invalid && nick.touched" class="text-danger">
+              {{ nick.errors?.['required'] ? 'Obbligatorio' : '' }}
+              {{ nick.errors?.['minlength'] ? 'Minimo 3 caratteri' : '' }}
+
+            </div>
+         -->
         </div>
         <button class="btn btn-primary" [disabled]="nickForm.invalid">
           Avanti

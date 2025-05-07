@@ -1,4 +1,4 @@
-<form #newGameForm="ngForm" (ngSubmit)="newGame()">
+<form #newGameForm="ngForm" (ngSubmit)="newGame()" >
     <div class="mb-3">
         <label for="nickname" class="form-label">Nickname</label>
         <input
@@ -8,10 +8,8 @@
                 class="form-control"
                 required
                 [(ngModel)]="nickname"
-                #nick="ngModel"
         />
-        <div class="form-text text-danger" *ngIf="nick.invalid && nick.touched">
-        </div>
+
     </div>
     <button
             type="submit"

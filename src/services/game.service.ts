@@ -22,4 +22,9 @@ export class GameService {
   joinGame(gameId: string, nickname: player){
     return this.http.post<boolean>(`/api/games/join/${gameId}`, nickname);
   }
+
+  deleteGame(gameId:string)
+  {
+    return this.http.delete(`/api/games/${gameId}`);
+  }
 }

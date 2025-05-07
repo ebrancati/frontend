@@ -7,26 +7,7 @@ import { GameService } from '../../../services/game.service';
 import { ActivatedRoute } from '@angular/router';
 import { DOCUMENT } from '@angular/common';
 import { interval, Subscription } from 'rxjs';
-import {MoveP} from '../../../model/entities/MoveP';
 
-export interface PlayerDto {
-  id: string;
-  nickname: string;
-  team: 'WHITE' | 'BLACK';
-}
-
-export interface GameResponse {
-  id: string;
-  board: string[][];
-  turno: 'WHITE' | 'BLACK' | 'NONE';
-  pedineW: number;
-  pedineB: number;
-  damaW: number;
-  damaB: number;
-  partitaTerminata: boolean;
-  vincitore: 'WHITE' | 'BLACK' | 'NONE';
-  players: PlayerDto[];
-}
 /**
  * Interface representing a cell on the checkers board
  */
@@ -45,6 +26,23 @@ interface Move {
   captured?: { row: number, col: number }[];
 }
 
+// Interface for the response from the server
+interface GameResponse {
+  id: string;
+  board: string[][];
+  turno: string;  // "WHITE" or "BLACK"
+  pedineW: number;
+  pedineB: number;
+  damaW: number;
+  damaB: number;
+  partitaTerminata: boolean;
+  vincitore: string;  // "NONE", "WHITE", or "BLACK"
+  players: {
+    id: string;
+    nickname: string;
+    team: string;  // "WHITE" or "BLACK"
+  }[];
+}
 
 @Component({
   selector: 'app-online-board',
@@ -60,7 +58,6 @@ interface Move {
   standalone: true
 })
 export class OnlineBoardComponent implements OnInit, OnDestroy {
-  private captureChainStart: { row: number; col: number } | null = null;
   origin: string | undefined
   board: Cell[][] = [];
   highlightedCells: { row: number, col: number }[] = [];
@@ -380,6 +377,7 @@ export class OnlineBoardComponent implements OnInit, OnDestroy {
    * @param col - Column index of the piece
    * @returns Array of capture moves for the piece
    */
+
   getCapturesForPiece(row: number, col: number): Move[] {
     const captures: Move[] = [];
     const cell = this.board[row][col];
@@ -427,53 +425,91 @@ export class OnlineBoardComponent implements OnInit, OnDestroy {
    * @param toCol - Destination column
    */
   makeMove(fromRow: number, fromCol: number, toRow: number, toCol: number): void {
+    // Double-check that it's the player's turn
     if (!this.isPlayerTurn()) return;
 
     const isCapture = Math.abs(fromRow - toRow) === 2 && Math.abs(fromCol - toCol) === 2;
     const movingPiece = this.board[fromRow][fromCol];
 
-    // sposta su UI (locale)
-    this.board[toRow][toCol] = { ...movingPiece };
-    this.board[fromRow][fromCol] = { hasPiece: false, pieceColor: null, isKing: false };
+    // Esegui il movimento
+    this.board[toRow][toCol] = {
+      hasPiece: true,
+      pieceColor: movingPiece.pieceColor,
+      isKing: movingPiece.isKing
+    };
+    this.board[fromRow][fromCol] = {
+      hasPiece: false,
+      pieceColor: null,
+      isKing: false
+    };
 
-    // verifica se ci sono altre catture da questa casella
-    const further = this.getCapturesForPiece(toRow, toCol);
-
-    if (isCapture && further.length > 0) {
-      // inizio o continua la catena: mantieni il punto di partenza originario
-      if (!this.captureChainStart) {
-        this.captureChainStart = { row: fromRow, col: fromCol };
-      }
-      // prepara click successivo sulla pedina catturata per continuare
-      this.selectedCell = { row: toRow, col: toCol };
-      this.highlightedCells = further.map(m => m.to);
-
-    } else {
-      // mossa singola o fine della catena di cattura
-
-      // determina l'origine: o catenaStart, o mossa singola
-      const start = this.captureChainStart || { row: fromRow, col: fromCol };
-      const payload: MoveP = {
-        from: `${start.row}${start.col}`,
-        to: `${toRow}${toCol}`,
-        player: movingPiece.pieceColor!
+    let capturedPiece = null;
+    if (isCapture) {
+      const captureRow = fromRow + (toRow - fromRow) / 2;
+      const captureCol = fromCol + (toCol - fromCol) / 2;
+      capturedPiece = this.board[captureRow][captureCol];
+      this.board[captureRow][captureCol] = {
+        hasPiece: false,
+        pieceColor: null,
+        isKing: false
       };
+    }
 
-      // invia un'unica chiamata che copre tutta la catena
-      this.moveService.saveMove(payload, this.gameID).subscribe({
-        next: res => this.updateGameState(res),
-        error: err => console.error('Errore salvataggio mossa', err)
-      });
 
-      // pulisci stato catena e highlights
-      this.captureChainStart = null;
+    // Promozione del re
+    if (!movingPiece.isKing) {
+      if ((movingPiece.pieceColor === 'white' && toRow === 0) ||
+        (movingPiece.pieceColor === 'black' && toRow === 7)) {
+        this.board[toRow][toCol].isKing = true;
+      }
+    }
+
+    // Aggiungi la mossa
+    this.moves.push({
+      from: { row: fromRow, col: fromCol },
+      to: { row: toRow, col: toCol },
+      captured: isCapture ? [{ row: fromRow + (toRow - fromRow) / 2, col: fromCol + (toCol - fromCol) / 2 }] : undefined
+    });
+    this.moves = [...this.moves];
+
+    // Verifica se ci sono altre catture
+    const additionalCaptures = this.getCapturesForPiece(toRow, toCol);
+
+    // Non cambiare il turno se ci sono altre catture disponibili
+    if (isCapture && additionalCaptures.length > 0) {
+      this.selectedCell = { row: toRow, col: toCol };
+      this.highlightedCells = additionalCaptures.map(move => move.to);
+    } else {
+      // Cambia turno localmente
+      this.currentPlayer = this.currentPlayer === 'white' ? 'black' : 'white';
       this.selectedCell = null;
       this.highlightedCells = [];
 
-      // cambia turno e controlla fine partita
-      this.currentPlayer = this.currentPlayer === 'white' ? 'black' : 'white';
-      this.checkGameOver();
+      if (!movingPiece.pieceColor) {
+        console.error("Il pezzo non ha un colore definito");
+        return;
+      }
+      // Invia la mossa al server
+      this.moveService.saveMove({
+        from: "" + this.columns[fromCol] + (8 - fromRow),
+        to: "" + this.columns[toCol] + (8 - toRow),
+        player: movingPiece.pieceColor!.toUpperCase() // Aggiungi il colore del giocatore (white o black)
+      }, this.gameID)
+        .subscribe({
+          next: (response) => {
+            console.log('Mossa salvata con successo', response);
+            // Richiedi immediatamente lo stato aggiornato
+            this.fetchGameState();
+          },
+          error: (error) => {
+            console.error('Errore nel salvare la mossa', error);
+            // Potrebbe essere necessario ripristinare lo stato precedente in caso di errore
+          }
+        });
+
+      // Controlla la fine del gioco
     }
+      this.checkGameOver();
   }
 
   /**
@@ -533,6 +569,17 @@ export class OnlineBoardComponent implements OnInit, OnDestroy {
       this.gameOver = true;
       this.winner = this.currentPlayer === 'white' ? 'black' : 'white';
       this.showGameOverModal = true;
+    }
+    if (this.gameOver) {
+      this.gameService.deleteGame(this.gameID).subscribe(
+        {
+          next: () => {
+            console.log('Partita eliminata con successo');
+          },
+          error: err => {
+            console.error('Errore durante l\'eliminazione della partita', err);
+          }
+        });
     }
   }
 
