@@ -7,7 +7,6 @@ import {GameState} from '../model/entities/GameState';
   providedIn: 'root'
 })
 export class GameService {
-  private api = '/api/games';
 
   constructor(private http: HttpClient) {}
 
