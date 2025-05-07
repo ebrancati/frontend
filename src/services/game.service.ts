@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import {HttpClient} from '@angular/common/http';
-import {player} from '../model/player';
-import {GameState} from '../model/GameState';
+import {player} from '../model/entities/player';
+import {GameState} from '../model/entities/GameState';
 
 @Injectable({
   providedIn: 'root'
@@ -20,6 +20,6 @@ export class GameService {
   }
 
   joinGame(gameId: string, nickname: player){
-    return this.http.post<GameState>(`/api/games//join/${gameId}`, nickname);
+    return this.http.post<boolean>(`/api/games/join/${gameId}`, nickname);
   }
 }

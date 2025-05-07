@@ -4,7 +4,8 @@ import { NgIf }             from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import {PlayerService} from '../../../services/player.service';
 import {GameService} from '../../../services/game.service';
-import {player} from '../../../model/player';
+import {player} from '../../../model/entities/player';
+import {switchMap} from 'rxjs';
 
 @Component({
   selector: 'app-join',
@@ -67,12 +68,12 @@ export class JoinComponent implements OnInit {
   }
 
   onJoin() {
+    localStorage.setItem('nickname', this.nickname);
     const dto: player = { nickname: this.nickname };
-    this.playerSvc.createPlayer(dto).subscribe(() => {
-      this.gameSvc.joinGame(this.gameId, dto).subscribe(() => {
-        // una volta dentro, vai al board
-        this.router.navigate(['/game', this.gameId]);
-      });
+    this.playerSvc.createPlayer(dto).pipe(
+      switchMap(() => this.gameSvc.joinGame(this.gameId, dto))
+    ).subscribe(() => {
+      this.router.navigate(['/game', this.gameId]);
     });
   }
 }

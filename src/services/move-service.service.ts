@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import {HttpClient} from '@angular/common/http';
-import {Move} from '../model/Move';
+import {MoveP} from '../model/entities/MoveP';
+import {GameResponse} from '../app/components/online-board/online-board.component';
 
 @Injectable({
   providedIn: 'root'
@@ -11,8 +12,8 @@ export class MoveServiceService {
   {
   }
 
-  saveMove(move: Move,gameID:string)
+  saveMove(move: MoveP, gameID:string)
   {
-    return this.http.post<Move>(`/api/games/${gameID}/move`, move);
+    return this.http.post<GameResponse>(`/api/games/${gameID}/move`, move);
   }
 }
