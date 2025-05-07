@@ -6,7 +6,7 @@ import { FormsModule, NgForm, NgModel } from '@angular/forms';
 import { NgIf, NgForOf }            from '@angular/common';
 
 @Component({
-  selector: 'app-login',
+  selector: 'page-login',
   standalone: true,
   imports: [
     FormsModule,  // contiene anche le direttive NgForm e NgModel
@@ -14,9 +14,9 @@ import { NgIf, NgForOf }            from '@angular/common';
     NgForOf,
 
   ],
-  templateUrl: './login.component.html',
+  templateUrl: './login.page.html',
 })
-export class LoginComponent {
+export class LoginPage {
   nickname = '';
   joinGameId = '';
 
@@ -30,7 +30,7 @@ export class LoginComponent {
     const player = { nickname: this.nickname };
     this.playerSvc.createPlayer(player).subscribe(() => {
       this.gameSvc.createGame(player).subscribe(gs => {
-        this.router.navigate(['/board', gs.id]);
+        this.router.navigate(['/game', gs.id]);
       });
     });
   }
@@ -39,7 +39,7 @@ export class LoginComponent {
     const player = { nickname: this.nickname };
     this.playerSvc.createPlayer(player).subscribe(() => {
       this.gameSvc.joinGame(this.joinGameId, player).subscribe(gs => {
-        this.router.navigate(['/board', gs.id]);
+        this.router.navigate(['/game', gs.id]);
       });
     });
   }

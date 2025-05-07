@@ -71,7 +71,7 @@ export class JoinComponent implements OnInit {
     this.playerSvc.createPlayer(dto).subscribe(() => {
       this.gameSvc.joinGame(this.gameId, dto).subscribe(() => {
         // una volta dentro, vai al board
-        this.router.navigate(['/board', this.gameId]);
+        this.router.navigate(['/game', this.gameId]);
       });
     });
   }

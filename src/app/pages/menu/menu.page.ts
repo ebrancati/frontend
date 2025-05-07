@@ -2,11 +2,11 @@ import { Component } from '@angular/core';
 import { Router } from '@angular/router';
 
 @Component({
-  selector: 'app-menu',
-  templateUrl: './menu.component.html',
-  styleUrls: ['./menu.component.css']
+  selector: 'page-menu',
+  templateUrl: './menu.page.html',
+  styleUrls: ['./menu.page.css']
 })
-export class MenuComponent {
+export class MenuPage {
   selectedMode: string | null = null;
 
   constructor(private router: Router) {}
@@ -21,7 +21,7 @@ export class MenuComponent {
         break;
       case 'local':
       case 'bot':
-        this.router.navigate(['/home']);
+        this.router.navigate(['/locale']);
         break;
     }
 

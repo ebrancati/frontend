@@ -15,7 +15,7 @@ import {FormsModule} from '@angular/forms';
 export class ChatComponent {
   messages = [
     { player: 'Player1', text: 'Pronto!' },
-    { player: 'Player2', text: 'Ciao, pronto per giocare!' }
+    { player: 'Player2', text: 'Holy shit! this website is garbage' }
   ];
   messageInput: string = '';
   sendMessage() {

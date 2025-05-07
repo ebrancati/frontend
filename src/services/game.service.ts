@@ -11,6 +11,10 @@ export class GameService {
 
   constructor(private http: HttpClient) {}
 
+  getGameState(gameId: string) {
+    return this.http.get<any>(`/api/games/${gameId}`);
+  }
+
   createGame(nickname: player) {
     return this.http.post<GameState>(`/api/games/create`, nickname);
   }
