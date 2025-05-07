@@ -209,7 +209,7 @@ export class OnlineBoardComponent implements OnInit, OnDestroy {
     if (!this.playerTeam) return false;
 
     const isPlayerTurn = (this.playerTeam === 'WHITE' && this.currentPlayer === 'white') ||
-                          (this.playerTeam === 'BLACK' && this.currentPlayer === 'black');
+      (this.playerTeam === 'BLACK' && this.currentPlayer === 'black');
 
     return isPlayerTurn;
   }
@@ -279,7 +279,7 @@ export class OnlineBoardComponent implements OnInit, OnDestroy {
    * Handles click events on board cells
    * @param row - Row index of the clicked cell
    * @param col - Column index of the clicked cell
-  */
+   */
   onCellClick(row: number, col: number): void {
     if (this.gameOver) return;
 
