@@ -1,0 +1,61 @@
+<div class="container">
+  <div class="board-container">
+    <!-- Modale per il game over -->
+    <div *ngIf="showGameOverModal" class="game-over-modal">
+      <div class="modal-content">
+        <div class="close-button" (click)="hideGameOverModal()">✕</div>
+        <h2>Partita Terminata!</h2>
+        <p>Ha vinto il giocatore <span class="winner-text">{{ winner === 'white' ? 'Bianco' : 'Nero' }}</span></p>
+        <button class="new-game-button" (click)="resetGame()">Nuova Partita</button>
+      </div>
+    </div>
+
+    <div class="board-with-coordinates">
+      <!-- Coordinate lettere (colonne) in alto -->
+      <div class="column-labels">
+        <div class="corner-spacer"></div>
+        <div *ngFor="let col of columns" class="col-label">{{ col }}</div>
+        <div class="corner-spacer"></div>
+      </div>
+
+      <div class="board-with-row-labels">
+        <!-- Coordinate numeri (righe) a sinistra -->
+        <div class="row-labels">
+          <div *ngFor="let row of rows" class="row-label">{{ row }}</div>
+        </div>
+
+        <!-- Scacchiera -->
+        <div class="board">
+          <div *ngFor="let row of board; let r = index" class="row">
+            <div *ngFor="let cell of row; let c = index"
+                 class="square"
+                 [ngClass]="{
+                   'light': isLight(r, c),
+                   'dark': !isLight(r, c),
+                   'highlight': isHighlight(r, c),
+                   'selected': isSelected(r, c)
+                 }"
+                 (click)="onCellClick(r, c)">
+              <div *ngIf="cell.hasPiece"
+                   class="piece"
+                   [ngClass]="[cell.pieceColor || '', cell.isKing ? 'king' : '']">
+                <div *ngIf="cell.isKing" class="crown">♛</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="side-panel">
+    <div class="status-info">
+      <div class="current-player">
+        Turno: {{ currentPlayer === 'white' ? 'Bianco' : 'Nero' }} <br>
+        Bianchi rimanenti: {{whiteCount}} <br>
+        Neri rimanenti: {{blackCount}}
+      </div>
+    </div>
+    <app-moves [moves]="moves"></app-moves>
+  </div>
+</div>

@@ -1,0 +1,585 @@
+.container {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 20px;
+  padding: 20px;
+}
+
+.board-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+}
+
+.status-info {
+  margin-bottom: 15px;
+  text-align: center;
+}
+
+.current-player {
+  font-weight: bold;
+  margin-bottom: 5px;
+  text-align: left;
+}
+
+.board-with-coordinates {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.board {
+  display: grid;
+  grid-template-columns: repeat(8, 60px);
+  grid-template-rows: repeat(8, 60px);
+  border: 2px solid #333;
+}
+
+.row {
+  display: contents;
+}
+
+.square {
+  width: 60px;
+  height: 60px;
+  position: relative;
+}
+
+.light { background: #f0d9b5; }
+.dark  { background: #b58863; }
+
+.piece {
+  width: 80%;
+  height: 80%;
+  border-radius: 50%;
+  margin: auto;
+  position: absolute;
+  top: 10%;
+  left: 10%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.black { background: black; }
+.white { background: white; border: 2px solid #ccc; }
+
+.selected {
+  position: relative;
+}
+
+.selected::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border: 3px solid yellow;
+  pointer-events: none;
+}
+
+.crown {
+  font-size: 28px;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: gold;
+  margin-top: -2px;
+}
+
+.black .crown {
+  text-shadow: 0 0 2px white;
+}
+
+.white .crown {
+  text-shadow: 0 0 2px black;
+}
+
+.square.highlight::after {
+  content: '';
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: 14px; height: 14px;
+  background: yellow;
+  border-radius: 50%;
+}
+
+.side-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 250px;
+}
+
+/* Modale di fine partita */
+.game-over-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background-color: white;
+  padding: 30px;
+  border-radius: 10px;
+  text-align: center;
+  position: relative;
+  width: 300px;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+}
+
+.close-button {
+  position: absolute;
+  top: 10px;
+  right: 15px;
+  font-size: 20px;
+  cursor: pointer;
+  color: #777;
+}
+
+.close-button:hover {
+  color: #333;
+}
+
+h2 {
+  color: #333;
+  margin-top: 0;
+  font-size: 24px;
+}
+
+.winner-text {
+  font-weight: bold;
+  font-size: 20px;
+  color: #d4af37; /* Colore oro per il vincitore */
+}
+
+.new-game-button {
+  margin-top: 20px;
+  padding: 10px 20px;
+  background-color: #ff00ea;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: background-color 0.3s;
+}
+
+.new-game-button:hover {
+  background-color: #45a049;
+}
+
+.column-labels {
+  display: flex;
+  width: 100%;
+  justify-content: center;
+  padding: 0 20px;
+}
+
+.col-label {
+  width: 60px;
+  text-align: center;
+  font-weight: bold;
+  color: #666;
+}
+
+.board-with-row-labels {
+  display: flex;
+  flex-direction: row;
+}
+
+.row-labels {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+  padding: 0 5px;
+}
+
+.row-label {
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  color: #666;
+  width: 20px;
+}
+
+.corner-spacer {
+  width: 20px;
+}
+
+/* Container per le info dei giocatori */
+.player-info {
+  display: flex;
+  align-items: center;
+  text-align: left;
+  padding: 10px 15px;
+  border-radius: 8px;
+  margin: 10px 0;
+  width: 100%;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  transition: all 0.3s ease;
+}
+
+/* Stili specifici per i giocatori */
+.black-player {
+  background-color: rgba(0, 0, 0, 0.1);
+  border-left: 4px solid #333;
+}
+
+.white-player {
+  background-color: rgba(255, 255, 255, 0.8);
+  border: 1px solid #ddd;
+  border-left: 4px solid #ddd;
+}
+
+/* Icona pedina (decorativa) */
+.player-piece {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  margin-right: 12px;
+  flex-shrink: 0;
+}
+
+.player-piece.black {
+  background-color: #000;
+  border: 1px solid #444;
+}
+
+.player-piece.white {
+  background-color: #fff;
+  border: 1px solid #ccc;
+}
+
+/* Contenuto testuale */
+.player-text {
+  flex-grow: 1;
+}
+
+.player-info h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.piece-count {
+  font-size: 0.9rem;
+  color: #666;
+  margin-top: 2px;
+}
+
+/* Stats del giocatore a destra */
+.player-stats {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  margin-left: 10px;
+}
+
+.status-badge {
+  padding: 3px 8px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.status-active {
+  background-color: #d4edda;
+  color: #155724;
+}
+
+.status-waiting {
+  background-color: #fff3cd;
+  color: #856404;
+}
+
+/* Stile per il turno di gioco */
+.turn-status-card {
+  width: 100%;
+  margin-top: 10px;
+  margin-bottom: 15px;
+}
+
+.turn-status {
+  display: flex;
+  align-items: center;
+  padding: 12px 15px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.turn-active {
+  background-color: #d1e7dd;
+  border-left: 4px solid #198754;
+}
+
+.turn-waiting {
+  background-color: #fff3cd;
+  border-left: 4px solid #ffc107;
+}
+
+.turn-loading {
+  background-color: #cff4fc;
+  border-left: 4px solid #0dcaf0;
+}
+
+.turn-icon {
+  margin-right: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.turn-active .turn-icon {
+  color: #198754;
+}
+
+.turn-waiting .turn-icon {
+  color: #856404;
+}
+
+.turn-loading .turn-icon {
+  color: #055160;
+  animation: spin 2s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.turn-text {
+  flex-grow: 1;
+}
+
+.turn-text h4 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.turn-text p {
+  margin: 3px 0 0 0;
+  font-size: 0.9rem;
+  color: #555;
+}
+
+/* RESPONSIVE STYLES */
+@media (max-width: 992px) {
+  .board {
+    grid-template-columns: repeat(8, 45px);
+    grid-template-rows: repeat(8, 45px);
+  }
+
+  .square {
+    width: 45px;
+    height: 45px;
+  }
+
+  .col-label {
+    width: 45px;
+  }
+
+  .row-label {
+    height: 45px;
+  }
+
+  .crown {
+    font-size: 22px;
+  }
+}
+
+@media (max-width: 768px) {
+  .container {
+    flex-direction: column;
+    align-items: center;
+    padding: 10px;
+  }
+
+  .board {
+    grid-template-columns: repeat(8, 40px);
+    grid-template-rows: repeat(8, 40px);
+  }
+
+  .square {
+    width: 40px;
+    height: 40px;
+  }
+
+  .col-label {
+    width: 40px;
+    font-size: 0.9rem;
+  }
+
+  .row-label {
+    height: 40px;
+    font-size: 0.9rem;
+  }
+
+  .side-panel {
+    width: 100%;
+    max-width: 400px;
+    margin-top: 20px;
+  }
+
+  .crown {
+    font-size: 20px;
+  }
+  
+  .player-info {
+    padding: 8px 12px;
+  }
+  
+  .player-piece {
+    width: 20px;
+    height: 20px;
+    margin-right: 10px;
+  }
+  
+  .player-info h3 {
+    font-size: 1rem;
+  }
+  
+  .piece-count {
+    font-size: 0.8rem;
+  }
+  
+  .status-badge {
+    padding: 2px 6px;
+    font-size: 0.75rem;
+  }
+  
+  .turn-status {
+    padding: 10px 12px;
+  }
+  
+  .turn-icon {
+    margin-right: 12px;
+  }
+  
+  .turn-icon svg {
+    width: 20px;
+    height: 20px;
+  }
+  
+  .turn-text h4 {
+    font-size: 1rem;
+  }
+  
+  .turn-text p {
+    font-size: 0.85rem;
+  }
+  
+  /* Usa l'ordine dei componenti per mobile */
+  .side-panel app-moves {
+    order: 2;
+  }
+  
+  .side-panel app-chat {
+    order: 1;
+  }
+}
+
+@media (max-width: 480px) {
+  .board {
+    grid-template-columns: repeat(8, 35px);
+    grid-template-rows: repeat(8, 35px);
+  }
+
+  .square {
+    width: 35px;
+    height: 35px;
+  }
+
+  .col-label {
+    width: 35px;
+    font-size: 0.8rem;
+  }
+
+  .row-label {
+    height: 35px;
+    font-size: 0.8rem;
+  }
+
+  .crown {
+    font-size: 18px;
+  }
+
+  .modal-content {
+    width: 90%;
+    max-width: 280px;
+    padding: 20px;
+  }
+  
+  .player-info h3 {
+    font-size: 0.9rem;
+  }
+  
+  .turn-status {
+    padding: 8px 10px;
+  }
+  
+  .turn-icon {
+    margin-right: 10px;
+  }
+  
+  .turn-icon svg {
+    width: 18px;
+    height: 18px;
+  }
+  
+  .turn-text h4 {
+    font-size: 0.9rem;
+  }
+  
+  .turn-text p {
+    font-size: 0.8rem;
+  }
+}
+
+@media (max-width: 375px) {
+  .board {
+    grid-template-columns: repeat(8, 30px);
+    grid-template-rows: repeat(8, 30px);
+  }
+
+  .square {
+    width: 30px;
+    height: 30px;
+  }
+
+  .col-label {
+    width: 30px;
+    font-size: 0.7rem;
+  }
+
+  .row-label {
+    height: 30px;
+    font-size: 0.7rem;
+  }
+
+  .piece {
+    width: 85%;
+    height: 85%;
+  }
+
+  .crown {
+    font-size: 16px;
+  }
+}
