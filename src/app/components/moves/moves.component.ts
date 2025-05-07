@@ -1,5 +1,5 @@
 import { Component, Input, OnChanges } from '@angular/core';
-import { NgForOf } from '@angular/common';
+import { CommonModule } from '@angular/common';
 
 interface Move {
   from: { row: number, col: number };
@@ -7,54 +7,157 @@ interface Move {
   captured?: { row: number, col: number }[];
 }
 
+interface FormattedMove {
+  notation: string;
+  isCaptureContinuation: boolean;
+}
+
 interface TurnMoves {
   number: number;
-  white?: string;
-  black?: string;
+  white: FormattedMove[];
+  black: FormattedMove[];
 }
 
 @Component({
   selector: 'app-moves',
+  standalone: true,
   imports: [
-    NgForOf
+    CommonModule
   ],
   templateUrl: './moves.component.html',
   styleUrl: './moves.component.css',
-  standalone: true
 })
 export class MovesComponent implements OnChanges {
   @Input() moves: Move[] = [];
   displayMoves: TurnMoves[] = [];
-
+ 
   ngOnChanges(): void {
+    // Reset display moves
     this.displayMoves = [];
-
-    // Organize moves in pairs (white, black) by turn
-    for (let i = 0; i < this.moves.length; i += 2) {
-      const turnNumber = Math.floor(i / 2) + 1;
-      const whiteMove = this.moves[i] ? this.formatMove(this.moves[i]) : undefined;
-      const blackMove = this.moves[i + 1] ? this.formatMove(this.moves[i + 1]) : undefined;
-
-      this.displayMoves.push({
-        number: turnNumber,
-        white: whiteMove,
-        black: blackMove
-      });
+    
+    if (this.moves.length === 0) return;
+    
+    let currentTurn = 1;
+    let currentMove = 0;
+    let isWhiteTurn = true; // Bianco inizia sempre
+    
+    // Inizializza primo turno
+    this.displayMoves.push({
+      number: currentTurn,
+      white: [],
+      black: []
+    });
+    
+    // Analizziamo le mosse per organizzarle in turni bianco/nero
+    while (currentMove < this.moves.length) {
+      const currentTurnData = this.displayMoves[this.displayMoves.length - 1];
+      
+      // Gestione mossa bianca
+      if (isWhiteTurn) {
+        // Prima mossa bianca in questo turno
+        const move = this.moves[currentMove];
+        const formattedMove = {
+          notation: this.formatMove(move),
+          isCaptureContinuation: false
+        };
+        
+        currentTurnData.white.push(formattedMove);
+        currentMove++;
+        
+        // Controlliamo se ci sono catture multiple da parte del bianco
+        while (currentMove < this.moves.length && 
+               this.isFollowUpCapture(this.moves[currentMove-1], this.moves[currentMove])) {
+          const captureMove = this.moves[currentMove];
+          const formattedCapture = {
+            notation: this.formatCaptureChain(captureMove),
+            isCaptureContinuation: true
+          };
+          
+          currentTurnData.white.push(formattedCapture);
+          currentMove++;
+        }
+        
+        isWhiteTurn = false;
+      } 
+      // Gestione mossa nera
+      else {
+        if (currentMove < this.moves.length) {
+          // Mossa nera
+          const move = this.moves[currentMove];
+          const formattedMove = {
+            notation: this.formatMove(move),
+            isCaptureContinuation: false
+          };
+          
+          currentTurnData.black.push(formattedMove);
+          currentMove++;
+          
+          // Controlliamo se ci sono catture multiple da parte del nero
+          while (currentMove < this.moves.length && 
+                 this.isFollowUpCapture(this.moves[currentMove-1], this.moves[currentMove])) {
+            const captureMove = this.moves[currentMove];
+            const formattedCapture = {
+              notation: this.formatCaptureChain(captureMove),
+              isCaptureContinuation: true
+            };
+            
+            currentTurnData.black.push(formattedCapture);
+            currentMove++;
+          }
+        }
+        
+        isWhiteTurn = true;
+        currentTurn++;
+        
+        // Prepara il prossimo turno se ci sono altre mosse
+        if (currentMove < this.moves.length) {
+          this.displayMoves.push({
+            number: currentTurn,
+            white: [],
+            black: []
+          });
+        }
+      }
     }
   }
 
   /**
-   * Converts board coordinates to algebraic notation (e.g., "e5")
-   * @param row - Row index (0-7)
-   * @param col - Column index (0-7)
-   * @returns Algebraic notation
+   * Calcola quante righe deve occupare il numero del turno
+   */
+  getRowSpan(turn: TurnMoves): number {
+    // Calcola il numero massimo di mosse tra bianco e nero
+    return Math.max(turn.white.length, turn.black.length);
+  }
+
+  /**
+   * Controlla se una mossa è la continuazione di una cattura multipla
+   */
+  private isFollowUpCapture(prevMove: Move, currentMove: Move): boolean {
+    return prevMove.to.row === currentMove.from.row && 
+           prevMove.to.col === currentMove.from.col && 
+           !!currentMove.captured;
+  }
+  
+  /**
+   * Formatta una parte di cattura multipla
+   */
+  private formatCaptureChain(move: Move): string {
+    const to = this.toAlgebraic(move.to.row, move.to.col);
+    return `x${to}`;
+  }
+  
+  /**
+   * Converte le coordinate della scacchiera in notazione algebrica
    */
   private toAlgebraic(row: number, col: number): string {
     const columns = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
     const rows = ['8', '7', '6', '5', '4', '3', '2', '1'];
     return columns[col] + rows[row];
   }
-
+  
+  /**
+   * Formatta una singola mossa in notazione algebrica
+   */
   private formatMove(move: Move): string {
     const from = this.toAlgebraic(move.from.row, move.from.col);
     const to = this.toAlgebraic(move.to.row, move.to.col);
