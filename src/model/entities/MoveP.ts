@@ -1,4 +1,4 @@
-export interface Move
+export interface MoveP
 {
 
   from:string,
