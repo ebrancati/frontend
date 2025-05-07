@@ -427,50 +427,66 @@ export class OnlineBoardComponent implements OnInit, OnDestroy {
    * @param toCol - Destination column
    */
   makeMove(fromRow: number, fromCol: number, toRow: number, toCol: number): void {
-    if (!this.isPlayerTurn()) return;
+    // Verifica turno
+    if (!this.isPlayerTurn()) {
+      return;
+    }
 
     const isCapture = Math.abs(fromRow - toRow) === 2 && Math.abs(fromCol - toCol) === 2;
     const movingPiece = this.board[fromRow][fromCol];
 
-    // sposta su UI (locale)
+    // Aggiorna UI: sposta pedina
     this.board[toRow][toCol] = { ...movingPiece };
     this.board[fromRow][fromCol] = { hasPiece: false, pieceColor: null, isKing: false };
 
-    // verifica se ci sono altre catture da questa casella
+    // Controlla promozione uomo -> dama
+    let justPromoted = false;
+    if (
+      !movingPiece.isKing &&
+      ((movingPiece.pieceColor === 'white' && toRow === 0) ||
+        (movingPiece.pieceColor === 'black' && toRow === 7))
+    ) {
+      this.board[toRow][toCol].isKing = true;
+      justPromoted = true;
+    }
+
+    // Determina eventuali catture successive
     const further = this.getCapturesForPiece(toRow, toCol);
 
-    if (isCapture && further.length > 0) {
-      // inizio o continua la catena: mantieni il punto di partenza originario
+    // Continua catena se è una cattura, ci sono ulteriori catture e non appena promosso
+    const continueChain = isCapture && further.length > 0 && !justPromoted;
+
+    if (continueChain) {
+      // Inizio o continuazione catena: memorizza origine
       if (!this.captureChainStart) {
         this.captureChainStart = { row: fromRow, col: fromCol };
       }
-      // prepara click successivo sulla pedina catturata per continuare
+      // Prepara evidenziazione per prossimo salto
       this.selectedCell = { row: toRow, col: toCol };
       this.highlightedCells = further.map(m => m.to);
 
     } else {
-      // mossa singola o fine della catena di cattura
-
-      // determina l'origine: o catenaStart, o mossa singola
+      // Fine catena o mossa semplice: invia richiesta unica
       const start = this.captureChainStart || { row: fromRow, col: fromCol };
       const payload: MoveP = {
         from: `${start.row}${start.col}`,
-        to: `${toRow}${toCol}`,
+        to:   `${toRow}${toCol}`,
         player: movingPiece.pieceColor!
       };
 
-      // invia un'unica chiamata che copre tutta la catena
-      this.moveService.saveMove(payload, this.gameID).subscribe({
-        next: res => this.updateGameState(res),
-        error: err => console.error('Errore salvataggio mossa', err)
-      });
+      this.moveService
+        .saveMove(payload, this.gameID)
+        .subscribe({
+          next: res => this.updateGameState(res),
+          error: err => console.error('Errore salvataggio mossa', err)
+        });
 
-      // pulisci stato catena e highlights
+      // Reset stato cattura multipla
       this.captureChainStart = null;
       this.selectedCell = null;
       this.highlightedCells = [];
 
-      // cambia turno e controlla fine partita
+      // Cambio turno e controllo fine partita
       this.currentPlayer = this.currentPlayer === 'white' ? 'black' : 'white';
       this.checkGameOver();
     }
