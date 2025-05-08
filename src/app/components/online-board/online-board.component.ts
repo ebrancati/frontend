@@ -1,4 +1,3 @@
-import { Component, Inject, OnInit, OnDestroy } from '@angular/core';
 import { NgClass, NgForOf, NgIf } from '@angular/common';
 import { MovesComponent } from '../moves/moves.component';
 import { ChatComponent } from '../chat/chat.component';
