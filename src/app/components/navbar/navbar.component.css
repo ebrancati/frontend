@@ -1,20 +1,89 @@
+/* Navbar generale */
 .navbar {
-  background: linear-gradient(135deg, #1f1c2c 0%, #928dab 50%, #1f1c2c 100%);
+  background: linear-gradient(135deg, #333 0%, #111 100%);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.5);
+  padding: 0.5rem 1rem;
 }
-.nav-link {
-  margin-left: 0.5rem;
+
+/* Brand “OnlineCheckers.org” */
+.navbar-brand h3 {
+  font-family: 'Segoe UI', Tahoma, sans-serif;
+  font-weight: 700;
+  font-size: 1.75rem;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  /* Icona pedina (usando emoji) */
+}
+.navbar-brand h3 span:first-child {
+  color: #f0d9b5; /* colore chiaro */
+}
+.navbar-brand h3 span:nth-of-type(2) {
+  color: #b58863; /* colore scuro */
+  margin: 0 0.25rem;
+}
+.navbar-brand h3 span:last-child {
+  color: #f0d9b5;
+}
+/* Aggiungiamo un’icona di pedina prima del testo */
+.navbar-brand h3::before {
+  content: "⛀";
   margin-right: 0.5rem;
-}
-
-h3 {
   font-size: 2rem;
-  margin-bottom: 0.5rem;
+  color: #d18b47;
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
 }
 
-h3 span:first-of-type {
-  color: #66ccff;
+/* Link di navigazione */
+.navbar-nav .nav-link {
+  font-family: 'Segoe UI', Tahoma, sans-serif;
+  font-size: 1.1rem;
+  margin: 0 0.5rem;
+  position: relative;
+  transition: color 0.2s ease-in-out;
+  color: #f8f9fa !important;
+}
+.navbar-nav .nav-link:hover,
+.navbar-nav .nav-link:focus {
+  color: #d18b47 !important;
+}
+.navbar-nav .nav-link::after {
+  content: '';
+  display: block;
+  width: 0%;
+  height: 2px;
+  background: #d18b47;
+  transition: width 0.3s;
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+}
+.navbar-nav .nav-link:hover::after {
+  width: 100%;
 }
 
-h3 span:last-of-type {
-  color: #ff9933;
+/* Stato attivo */
+.navbar-nav .nav-link.active {
+  color: #d18b47 !important;
+}
+.navbar-nav .nav-link.active::after {
+  width: 100%;
+}
+
+/* Toggler (menu mobile) */
+.navbar-toggler {
+  border: none;
+}
+.navbar-toggler-icon {
+  filter: invert(1);
+}
+
+/* Ottimizzazione responsive */
+@media (max-width: 992px) {
+  .navbar-brand h3 {
+    font-size: 1.5rem;
+  }
+  .navbar-nav .nav-link {
+    padding: 0.5rem 1rem;
+  }
 }
