@@ -49,7 +49,6 @@
   </div>
 
   <div class="side-panel">
-    <app-moves [moves]="moves"></app-moves>
     <div class="status-info">
       <div class="current-player">
         Turno: {{ currentPlayer === 'white' ? 'Bianco' : 'Nero' }} <br>
@@ -57,5 +56,6 @@
         Neri rimanenti: {{blackCount}}
       </div>
     </div>
+    <app-moves [moves]="moves"></app-moves>
   </div>
 </div>

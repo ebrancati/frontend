@@ -83,6 +83,9 @@ export class OnlineBoardComponent implements OnInit, OnDestroy {
   columns: string[] = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
   rows: number[] = [1, 2, 3, 4, 5, 6, 7, 8];
 
+  // Proprietà per tenere traccia dello stato di copia del link della partita
+  linkCopied: boolean = false;
+
   constructor(
     private moveService: MoveServiceService,
     private gameService: GameService,
@@ -114,7 +117,7 @@ export class OnlineBoardComponent implements OnInit, OnDestroy {
     this.fetchGameState();
 
     // Poi inizia il polling ogni 2 secondi
-    this.pollingSubscription = interval(5000).subscribe(() => {
+    this.pollingSubscription = interval(2000).subscribe(() => {
       this.fetchGameState();
     });
   }
@@ -209,7 +212,7 @@ export class OnlineBoardComponent implements OnInit, OnDestroy {
     if (!this.playerTeam) return false;
 
     const isPlayerTurn = (this.playerTeam === 'WHITE' && this.currentPlayer === 'white') ||
-      (this.playerTeam === 'BLACK' && this.currentPlayer === 'black');
+                          (this.playerTeam === 'BLACK' && this.currentPlayer === 'black');
 
     return isPlayerTurn;
   }
@@ -279,7 +282,7 @@ export class OnlineBoardComponent implements OnInit, OnDestroy {
    * Handles click events on board cells
    * @param row - Row index of the clicked cell
    * @param col - Column index of the clicked cell
-   */
+  */
   onCellClick(row: number, col: number): void {
     if (this.gameOver) return;
 
@@ -457,6 +460,14 @@ export class OnlineBoardComponent implements OnInit, OnDestroy {
     } else {
       // fine catena o mossa semplice → invia al server
       const start = this.captureChainStart || { row: fromRow, col: fromCol };
+
+      // prima di inviare la mossa al server salva la mossa nel componente moves
+      this.moves = [...this.moves, {
+        from: { row: start.row, col: start.col },
+        to: { row: toRow, col: toCol },
+        captured: isCapture ? [{ row: (fromRow + toRow) / 2, col: (fromCol + toCol) / 2 }] : undefined
+      }];
+
       const payload: MoveP = {
         from: `${start.row}${start.col}`,
         to: `${toRow}${toCol}`,
@@ -545,6 +556,41 @@ export class OnlineBoardComponent implements OnInit, OnDestroy {
    */
   hideGameOverModal(): void {
     this.showGameOverModal = false;
+  }
+
+  /**
+   * Verifica se la partita ha bisogno di un secondo giocatore
+   * @returns true se manca un giocatore, false se entrambi i giocatori sono presenti
+   */
+  needsOpponent(): boolean {
+    // La partita ha bisogno di un avversario se ha meno di 2 giocatori
+    return !this.whitePlayerNickname || !this.blackPlayerNickname ||
+          this.whitePlayerNickname === 'Giocatore Bianco' ||
+          this.blackPlayerNickname === 'Giocatore Nero';
+  }
+
+  /**
+   * Copia il testo negli appunti
+   * @param inputElement Elemento input contenente il testo da copiare
+   */
+  copyToClipboard(inputElement: HTMLInputElement): void {
+    // Seleziona il testo nell'input
+    inputElement.select();
+    inputElement.setSelectionRange(0, 99999); // Per dispositivi mobili
+
+    // Esegui il comando di copia
+    document.execCommand('copy');
+
+    // Deseleziona il testo
+    inputElement.blur();
+
+    // Mostra il messaggio di conferma
+    this.linkCopied = true;
+
+    // Nascondi il messaggio dopo 2 secondi
+    setTimeout(() => {
+      this.linkCopied = false;
+    }, 2000);
   }
 
   /**

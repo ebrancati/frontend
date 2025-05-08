@@ -49,3 +49,56 @@ tbody tr:nth-child(even) {
 tbody tr:hover {
   background-color: #efefef;
 }
+
+/* RESPONSIVE STYLES */
+@media (max-width: 992px) {
+  .moves {
+    min-width: 200px;
+  }
+}
+
+@media (max-width: 768px) {
+  .moves {
+    height: 200px;
+    min-width: 100%;
+  }
+
+  .moves h4 {
+    font-size: 15px;
+    padding-bottom: 6px;
+  }
+
+  .moves-table th {
+    font-size: 13px;
+  }
+
+  .move-cell {
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 480px) {
+  .moves {
+    height: 180px;
+    padding: 8px;
+  }
+
+  .moves h4 {
+    font-size: 14px;
+    padding-bottom: 5px;
+    margin-bottom: 8px;
+  }
+
+  .moves-table th {
+    font-size: 12px;
+  }
+
+  .move-cell {
+    font-size: 12px;
+    padding: 3px 0;
+  }
+
+  .turn-number {
+    width: 15%;
+  }
+}

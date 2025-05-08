@@ -116,7 +116,7 @@
   width: 250px;
 }
 
-/* Stile per la modale di fine partita */
+/* Modale di fine partita */
 .game-over-modal {
   position: fixed;
   top: 0;
@@ -127,7 +127,7 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 1000; /* Assicura che sia sopra tutti gli altri elementi */
+  z-index: 1000;
 }
 
 .modal-content {
@@ -219,4 +219,367 @@ h2 {
 
 .corner-spacer {
   width: 20px;
+}
+
+/* Container per le info dei giocatori */
+.player-info {
+  display: flex;
+  align-items: center;
+  text-align: left;
+  padding: 10px 15px;
+  border-radius: 8px;
+  margin: 10px 0;
+  width: 100%;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  transition: all 0.3s ease;
+}
+
+/* Stili specifici per i giocatori */
+.black-player {
+  background-color: rgba(0, 0, 0, 0.1);
+  border-left: 4px solid #333;
+}
+
+.white-player {
+  background-color: rgba(255, 255, 255, 0.8);
+  border: 1px solid #ddd;
+  border-left: 4px solid #ddd;
+}
+
+/* Icona pedina (decorativa) */
+.player-piece {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  margin-right: 12px;
+  flex-shrink: 0;
+}
+
+.player-piece.black {
+  background-color: #000;
+  border: 1px solid #444;
+}
+
+.player-piece.white {
+  background-color: #fff;
+  border: 1px solid #ccc;
+}
+
+/* Contenuto testuale */
+.player-text {
+  flex-grow: 1;
+}
+
+.player-info h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.piece-count {
+  font-size: 0.9rem;
+  color: #666;
+  margin-top: 2px;
+}
+
+/* Stats del giocatore a destra */
+.player-stats {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  margin-left: 10px;
+}
+
+.status-badge {
+  padding: 3px 8px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.status-active {
+  background-color: #d4edda;
+  color: #155724;
+}
+
+.status-waiting {
+  background-color: #fff3cd;
+  color: #856404;
+}
+
+/* Stile per il turno di gioco */
+.turn-status-card {
+  width: 100%;
+  margin-top: 10px;
+  margin-bottom: 15px;
+}
+
+.turn-status {
+  display: flex;
+  align-items: center;
+  padding: 12px 15px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.turn-active {
+  background-color: #d1e7dd;
+  border-left: 4px solid #198754;
+}
+
+.turn-waiting {
+  background-color: #fff3cd;
+  border-left: 4px solid #ffc107;
+}
+
+.turn-loading {
+  background-color: #cff4fc;
+  border-left: 4px solid #0dcaf0;
+}
+
+.turn-icon {
+  margin-right: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.turn-active .turn-icon {
+  color: #198754;
+}
+
+.turn-waiting .turn-icon {
+  color: #856404;
+}
+
+.turn-loading .turn-icon {
+  color: #055160;
+  animation: spin 2s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.turn-text {
+  flex-grow: 1;
+}
+
+.turn-text h4 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.turn-text p {
+  margin: 3px 0 0 0;
+  font-size: 0.9rem;
+  color: #555;
+}
+
+/* RESPONSIVE STYLES */
+@media (max-width: 992px) {
+  .board {
+    grid-template-columns: repeat(8, 45px);
+    grid-template-rows: repeat(8, 45px);
+  }
+
+  .square {
+    width: 45px;
+    height: 45px;
+  }
+
+  .col-label {
+    width: 45px;
+  }
+
+  .row-label {
+    height: 45px;
+  }
+
+  .crown {
+    font-size: 22px;
+  }
+}
+
+@media (max-width: 768px) {
+  .container {
+    flex-direction: column;
+    align-items: center;
+    padding: 10px;
+  }
+
+  .board {
+    grid-template-columns: repeat(8, 40px);
+    grid-template-rows: repeat(8, 40px);
+  }
+
+  .square {
+    width: 40px;
+    height: 40px;
+  }
+
+  .col-label {
+    width: 40px;
+    font-size: 0.9rem;
+  }
+
+  .row-label {
+    height: 40px;
+    font-size: 0.9rem;
+  }
+
+  .side-panel {
+    width: 100%;
+    max-width: 400px;
+    margin-top: 20px;
+  }
+
+  .crown {
+    font-size: 20px;
+  }
+
+  .player-info {
+    padding: 8px 12px;
+  }
+
+  .player-piece {
+    width: 20px;
+    height: 20px;
+    margin-right: 10px;
+  }
+
+  .player-info h3 {
+    font-size: 1rem;
+  }
+
+  .piece-count {
+    font-size: 0.8rem;
+  }
+
+  .status-badge {
+    padding: 2px 6px;
+    font-size: 0.75rem;
+  }
+
+  .turn-status {
+    padding: 10px 12px;
+  }
+
+  .turn-icon {
+    margin-right: 12px;
+  }
+
+  .turn-icon svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .turn-text h4 {
+    font-size: 1rem;
+  }
+
+  .turn-text p {
+    font-size: 0.85rem;
+  }
+
+  /* Usa l'ordine dei componenti per mobile */
+  .side-panel app-moves {
+    order: 2;
+  }
+
+  .side-panel app-chat {
+    order: 1;
+  }
+}
+
+@media (max-width: 480px) {
+  .board {
+    grid-template-columns: repeat(8, 35px);
+    grid-template-rows: repeat(8, 35px);
+  }
+
+  .square {
+    width: 35px;
+    height: 35px;
+  }
+
+  .col-label {
+    width: 35px;
+    font-size: 0.8rem;
+  }
+
+  .row-label {
+    height: 35px;
+    font-size: 0.8rem;
+  }
+
+  .crown {
+    font-size: 18px;
+  }
+
+  .modal-content {
+    width: 90%;
+    max-width: 280px;
+    padding: 20px;
+  }
+
+  .player-info h3 {
+    font-size: 0.9rem;
+  }
+
+  .turn-status {
+    padding: 8px 10px;
+  }
+
+  .turn-icon {
+    margin-right: 10px;
+  }
+
+  .turn-icon svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .turn-text h4 {
+    font-size: 0.9rem;
+  }
+
+  .turn-text p {
+    font-size: 0.8rem;
+  }
+}
+
+@media (max-width: 375px) {
+  .board {
+    grid-template-columns: repeat(8, 30px);
+    grid-template-rows: repeat(8, 30px);
+  }
+
+  .square {
+    width: 30px;
+    height: 30px;
+  }
+
+  .col-label {
+    width: 30px;
+    font-size: 0.7rem;
+  }
+
+  .row-label {
+    height: 30px;
+    font-size: 0.7rem;
+  }
+
+  .piece {
+    width: 85%;
+    height: 85%;
+  }
+
+  .crown {
+    font-size: 16px;
+  }
 }

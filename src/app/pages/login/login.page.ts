@@ -1,19 +1,15 @@
 import { Component } from '@angular/core';
 import { Router } from '@angular/router';
-import {GameService} from "../../../services/game.service";
-import {PlayerService} from "../../../services/player.service";
-import { FormsModule, NgForm, NgModel } from '@angular/forms';
-import { NgIf, NgForOf }            from '@angular/common';
+import { GameService } from "../../../services/game.service";
+import { PlayerService } from "../../../services/player.service";
+import { FormsModule } from '@angular/forms';
 import {switchMap} from 'rxjs';
 
 @Component({
   selector: 'page-login',
   standalone: true,
   imports: [
-    FormsModule,  // contiene anche le direttive NgForm e NgModel
-    NgIf,
-    NgForOf,
-
+    FormsModule
   ],
   templateUrl: './login.page.html',
 })
@@ -55,5 +51,4 @@ export class LoginPage {
       error: err => console.error('Errore join:', err)
     });
   }
-
 }
