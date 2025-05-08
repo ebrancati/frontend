@@ -84,6 +84,8 @@ export class OnlineBoardComponent implements OnInit, OnDestroy {
   blackCount: number = 12;
   columns: string[] = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
   rows: number[] = [1, 2, 3, 4, 5, 6, 7, 8];
+  nickname: string | null = localStorage.getItem('nickname');
+
 
   // Proprietà per tenere traccia dello stato di copia del link della partita
   linkCopied: boolean = false;
@@ -648,4 +650,6 @@ export class OnlineBoardComponent implements OnInit, OnDestroy {
   resetGame(): void {
     this.initBoard();
   }
+
+  protected readonly localStorage = localStorage;
 }
