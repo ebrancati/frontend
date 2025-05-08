@@ -1,6 +1,8 @@
 import { Component } from '@angular/core';
 import { NgClass, NgForOf, NgIf } from '@angular/common';
 import { MovesComponent } from '../moves/moves.component';
+import { AudioService } from '../../../services/audio.service';
+
 
 /**
  * Interface representing a cell on the checkers board
@@ -51,6 +53,9 @@ export class OfflineBoardComponent {
   ngOnInit() {
     this.initBoard();
   }
+
+  // Modifica il costruttore della classe
+  constructor(private audioService: AudioService) {}
 
   /**
    * Initialize the game board with pieces in starting positions
@@ -261,8 +266,8 @@ export class OfflineBoardComponent {
    * @param toRow - Destination row
    * @param toCol - Destination column
    */
+  // Modifica il metodo makeMove
   makeMove(fromRow: number, fromCol: number, toRow: number, toCol: number): void {
-    // Check if this is a capture move
     const isCapture = Math.abs(fromRow - toRow) === 2 && Math.abs(fromCol - toCol) === 2;
 
     // Update the board
@@ -310,6 +315,13 @@ export class OfflineBoardComponent {
       captured: isCapture ? [{ row: fromRow + (toRow - fromRow) / 2, col: fromCol + (toCol - fromCol) / 2 }] : undefined
     }];
 
+    // Dopo aver gestito la cattura o il movimento
+    if (isCapture) {
+      this.audioService.playCaptureSound();
+    } else {
+      this.audioService.playMoveSound();
+    }
+
     // Check for additional captures from the new position
     const additionalCaptures = this.getCapturesForPiece(toRow, toCol);
     if (isCapture && additionalCaptures.length > 0) {
@@ -330,6 +342,7 @@ export class OfflineBoardComponent {
   /**
    * Checks if the game is over and determines the winner
    */
+  // Modifica il metodo checkGameOver
   checkGameOver(): void {
     // Check if a player has no pieces left
     this.whiteCount = 0;
@@ -347,15 +360,17 @@ export class OfflineBoardComponent {
 
     if (this.whiteCount === 0) {
       this.gameOver = true;
-      this.winner = 'black'; // Il nero vince se il bianco non ha pezzi
+      this.winner = 'black';
       this.showGameOverModal = true;
+      this.audioService.playWinSound();
       return;
     }
 
     if (this.blackCount === 0) {
       this.gameOver = true;
-      this.winner = 'white'; // Il bianco vince se il nero non ha pezzi
+      this.winner = 'white';
       this.showGameOverModal = true;
+      this.audioService.playWinSound();
       return;
     }
 
@@ -381,6 +396,7 @@ export class OfflineBoardComponent {
       this.gameOver = true;
       this.winner = this.currentPlayer === 'white' ? 'black' : 'white';
       this.showGameOverModal = true;
+      this.audioService.playWinSound();
     }
   }
 
