@@ -8,7 +8,9 @@ interface GameResponse {
   damaB: number;
   partitaTerminata: boolean;
   vincitore: string;  // "NONE", "WHITE", or "BLACK"
-  players: {
+  chat: string;
+  players:
+    {
     id: string;
     nickname: string;
     team: string;  // "WHITE" or "BLACK"

@@ -1,27 +1,36 @@
-import { Component } from '@angular/core';
-import {NgForOf} from '@angular/common';
-import {FormsModule} from '@angular/forms';
+import { Component, Input, OnInit } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { CommonModule } from '@angular/common';
+import {GameService} from '../../../services/game.service';
 
 @Component({
   selector: 'app-chat',
-  imports: [
-    NgForOf,
-    FormsModule
-  ],
+  standalone: true,
+  imports: [CommonModule, FormsModule],
   templateUrl: './chat.component.html',
-  styleUrl: './chat.component.css',
-  standalone: true
+  styleUrl: './chat.component.css'
 })
 export class ChatComponent {
-  messages = [
-    { player: 'Player1', text: 'Pronto!' },
-    { player: 'Player2', text: 'Holy shit! this website is garbage' }
-  ];
+  @Input() gameId!: string;
+  @Input() nickname: string = '';
+  @Input() chatHistory: string = '';
+
   messageInput: string = '';
-  sendMessage() {
-    if (this.messageInput.trim() !== '') {
-      this.messages.push({ player: 'Player1', text: this.messageInput });
-      this.messageInput = '';
-    }
+
+  constructor(private gameService: GameService) {}
+
+  sendMessage(): void {
+    const text = this.messageInput.trim();
+    if (!text) return;
+
+    const payload = { player: this.nickname, text };
+
+    this.gameService.sendMessages(this.gameId, payload).subscribe({
+      next: () => {
+        this.messageInput = '';
+      },
+      error: err => console.error('Popi popi in chat component ts', err)
+    });
   }
 }
+

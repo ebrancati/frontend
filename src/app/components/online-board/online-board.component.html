@@ -231,6 +231,11 @@
 
   <div class="side-panel">
     <app-moves [moves]="moves"></app-moves>
-    <app-chat></app-chat>
+    <app-chat
+    [gameId]="gameID"
+    [nickname]="currentPlayer.toUpperCase()"
+    [chatHistory]="chatHistory">
+
+    </app-chat>
   </div>
 </div>

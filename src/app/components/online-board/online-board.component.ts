@@ -8,6 +8,8 @@ import { ActivatedRoute } from '@angular/router';
 import { DOCUMENT } from '@angular/common';
 import { interval, Subscription } from 'rxjs';
 import {MoveP} from '../../../model/entities/MoveP';
+import {Component, Inject, OnDestroy, OnInit} from '@angular/core';
+import { AudioService } from '../../../services/audio.service';
 
 export interface PlayerDto {
   id: string;
@@ -16,6 +18,7 @@ export interface PlayerDto {
 }
 
 export interface GameResponse {
+  chat: string;
   id: string;
   board: string[][];
   turno: 'WHITE' | 'BLACK' | 'NONE';
@@ -85,11 +88,13 @@ export class OnlineBoardComponent implements OnInit, OnDestroy {
 
   // Proprietà per tenere traccia dello stato di copia del link della partita
   linkCopied: boolean = false;
+  protected chatHistory: string='';
 
   constructor(
     private moveService: MoveServiceService,
     private gameService: GameService,
     private route: ActivatedRoute,
+    private audioService: AudioService,
     @Inject(DOCUMENT) private document: Document
   ) {
     this.origin = this.document.location.origin;
@@ -131,6 +136,8 @@ export class OnlineBoardComponent implements OnInit, OnDestroy {
     this.gameService.getGameState(this.gameID).subscribe({
       next: (response: GameResponse) => {
         console.log('Game state response:', response);
+        this.chatHistory = response.chat ?? '';
+
 
         const nickname = localStorage.getItem('nickname');
         console.log('Nickname corrente in localStorage:', nickname);
@@ -159,6 +166,7 @@ export class OnlineBoardComponent implements OnInit, OnDestroy {
 
         // Aggiorna lo stato del gioco
         this.updateGameState(response);
+
       },
       error: (error) => {
         console.error('Errore nel recupero dello stato del gioco:', error);
@@ -195,7 +203,13 @@ export class OnlineBoardComponent implements OnInit, OnDestroy {
       }
 
       this.winner = response.vincitore === 'WHITE' ? 'white' : 'black';
-      
+      if (this.playerTeam === response.vincitore) {
+        this.audioService.playWinSound();
+      } else {
+        this.audioService.playLoseSound();
+      }
+
+
       // Elimina la partita dal server
       this.gameService.deleteGame(this.gameID).subscribe({
         next: () => {
@@ -462,6 +476,10 @@ export class OnlineBoardComponent implements OnInit, OnDestroy {
       const capRow = (fromRow + toRow) / 2;
       const capCol = (fromCol + toCol) / 2;
       this.board[capRow][capCol] = { hasPiece: false, pieceColor: null, isKing: false };
+      this.audioService.playCaptureSound();  // Solo questa riga da aggiungere
+    } else {
+      this.audioService.playMoveSound();
+
     }
 
     // ─── SPOSTA IL PEZZO──────────────────────────────────────
