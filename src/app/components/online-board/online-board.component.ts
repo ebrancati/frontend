@@ -169,6 +169,9 @@ export class OnlineBoardComponent implements OnInit, OnDestroy {
   /**
    * Updates the game state based on the response from the server
    */
+  /**
+   * Updates the game state based on the response from the server
+   */
   updateGameState(response: GameResponse) {
     // Aggiorna il turno corrente
     this.currentPlayer = response.turno === 'WHITE' ? 'white' : 'black';
@@ -182,9 +185,28 @@ export class OnlineBoardComponent implements OnInit, OnDestroy {
 
     // Aggiorna stato fine partita
     this.gameOver = response.partitaTerminata;
+
     if (this.gameOver && response.vincitore !== 'NONE') {
+
+      // partita terminata, interrompi polling
+      if (this.pollingSubscription) {
+        this.pollingSubscription.unsubscribe();
+        this.pollingSubscription = null;
+      }
+
       this.winner = response.vincitore === 'WHITE' ? 'white' : 'black';
-      this.showGameOverModal = true;
+      
+      // Elimina la partita dal server
+      this.gameService.deleteGame(this.gameID).subscribe({
+        next: () => {
+          console.log('Partita eliminata con successo');
+          this.showGameOverModal = true;
+        },
+        error: (err) => {
+          console.error('Errore nell\'eliminazione della partita:', err);
+          this.showGameOverModal = true;
+        }
+      });
     }
 
     console.log(`Stato aggiornato: Turno ${this.currentPlayer}, Team giocatore: ${this.playerTeam}`);
