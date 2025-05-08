@@ -1,6 +1,6 @@
-import { Component } from '@angular/core';
+import {Component, EventEmitter, Inject, Output} from '@angular/core';
 import { Router } from '@angular/router';
-import { CommonModule } from '@angular/common';
+import {CommonModule, DOCUMENT} from '@angular/common';
 
 @Component({
   selector: 'app-navbar',
@@ -10,13 +10,22 @@ import { CommonModule } from '@angular/common';
   imports: [CommonModule]
 })
 export class NavbarComponent {
-  nickname: string | null = localStorage.getItem('nickname');
+  nickname = localStorage.getItem('nickname') ?? '';
   isAdmin: boolean = false;
 
-  constructor(private router: Router) {}
+
+
+  constructor(private router: Router,
+) {}
 
   logout(): void {
     localStorage.removeItem('nickname');
     this.router.navigate(['/login']);
+  }
+  ngOnInit(): void {
+    const savedNickname = localStorage.getItem('nickname');
+    if (savedNickname) {
+      this.nickname = savedNickname;
+    }
   }
 }

@@ -24,10 +24,9 @@ export class GameService {
   }
 
 
-  sendMessages(gameId: string, payload: { player: string; text: string; })
+  sendMessages(gameId: string, payload: { player: string | null; text: string })
   {
-    return this.http.post(`/api/games/${gameId}/chat`, {gameId, payload});
-  }
+    return this.http.post(`/api/games/${gameId}/chat`, payload);  }
 
   deleteGame(gameId:string)
   {

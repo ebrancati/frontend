@@ -1,10 +1,7 @@
 <div class="chat">
   <div class="chat-messages">
-    <div class="chat-messages">
-      <div *ngFor="let line of chatHistory.split('\n')">
-        {{ line }}
-      </div>
-    </div>
+    <div *ngFor="let line of chatHistory.split('\n')">
+      <div [innerHTML]="line"></div>    </div>
   </div>
   <div class="chat-input">
     <input [(ngModel)]="messageInput" placeholder="Scrivi un messaggio..." />
