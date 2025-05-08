@@ -16,6 +16,7 @@ export interface PlayerDto {
 }
 
 export interface GameResponse {
+  chat: string;
   id: string;
   board: string[][];
   turno: 'WHITE' | 'BLACK' | 'NONE';
@@ -85,6 +86,7 @@ export class OnlineBoardComponent implements OnInit, OnDestroy {
 
   // Proprietà per tenere traccia dello stato di copia del link della partita
   linkCopied: boolean = false;
+  protected chatHistory: string='';
 
   constructor(
     private moveService: MoveServiceService,
@@ -131,6 +133,8 @@ export class OnlineBoardComponent implements OnInit, OnDestroy {
     this.gameService.getGameState(this.gameID).subscribe({
       next: (response: GameResponse) => {
         console.log('Game state response:', response);
+        this.chatHistory = response.chat ?? '';
+
 
         const nickname = localStorage.getItem('nickname');
         console.log('Nickname corrente in localStorage:', nickname);
@@ -159,6 +163,7 @@ export class OnlineBoardComponent implements OnInit, OnDestroy {
 
         // Aggiorna lo stato del gioco
         this.updateGameState(response);
+
       },
       error: (error) => {
         console.error('Errore nel recupero dello stato del gioco:', error);
@@ -195,7 +200,7 @@ export class OnlineBoardComponent implements OnInit, OnDestroy {
       }
 
       this.winner = response.vincitore === 'WHITE' ? 'white' : 'black';
-      
+
       // Elimina la partita dal server
       this.gameService.deleteGame(this.gameID).subscribe({
         next: () => {

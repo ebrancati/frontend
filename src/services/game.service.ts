@@ -14,16 +14,25 @@ export class GameService {
     return this.http.get<any>(`/api/games/${gameId}`);
   }
 
+
   createGame(nickname: player) {
     return this.http.post<GameState>(`/api/games/create`, nickname);
   }
 
-  joinGame(gameId: string, nickname: player){
+  joinGame(gameId: string, nickname: player) {
     return this.http.post<boolean>(`/api/games/join/${gameId}`, nickname);
+  }
+
+
+  sendMessages(gameId: string, payload: { player: string; text: string; })
+  {
+    return this.http.post(`/api/games/${gameId}/chat`, {gameId, payload});
   }
 
   deleteGame(gameId:string)
   {
     return this.http.delete(`/api/games/${gameId}`);
   }
+
+
 }

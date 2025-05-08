@@ -1,7 +1,9 @@
 <div class="chat">
   <div class="chat-messages">
-    <div *ngFor="let msg of messages">
-      <strong>{{ msg.player }}:</strong> {{ msg.text }}
+    <div class="chat-messages">
+      <div *ngFor="let line of chatText.split('\n')">
+        {{ line }}
+      </div>
     </div>
   </div>
   <div class="chat-input">
