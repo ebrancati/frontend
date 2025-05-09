@@ -4,7 +4,7 @@
       <div [innerHTML]="line"></div>    </div>
   </div>
   <div class="chat-input">
-    <input [(ngModel)]="messageInput" placeholder="Scrivi un messaggio..." />
+    <input [(ngModel)]="messageInput" placeholder="Scrivi un messaggio..." (keydown)="onKeyDown($event)"/>
     <button (click)="sendMessage()">➥</button>
   </div>
 </div>
