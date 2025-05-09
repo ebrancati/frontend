@@ -1,0 +1,77 @@
+{
+  "COMMON": {
+    "PLAY": "Gioca",
+    "RULES": "Regole",
+    "LOGIN": "Accedi",
+    "WELCOME": "Benvenuto",
+    "COPY": "Copia",
+    "COPY_SUCCESS": "Link copiato negli appunti!",
+    "SHARE_GAME": "Condividi questa partita",
+    "SHARE_LINK": "Condividi questo link con il tuo avversario:"
+  },
+  "GAME": {
+    "YOUR_TURN": "È il tuo turno!",
+    "WAITING": "In attesa...",
+    "MOVE_PIECE": "Muovi una pedina per continuare.",
+    "OPPONENT_TURN": "Turno di",
+    "CONNECTING": "Connessione in corso",
+    "ROLE_DETERMINING": "Determinazione del ruolo nella partita...",
+    "WHITE_PLAYER": "Giocatore Bianco",
+    "BLACK_PLAYER": "Giocatore Nero",
+    "PIECES": "Pedine",
+    "TURN": "Turno",
+    "WAITING_STATUS": "Attesa",
+    "RECENT_MOVES": "Mosse Recenti"
+  },
+  "MENU": {
+    "SELECT_MODE": "Seleziona Modalità di Gioco",
+    "ONLINE": "Gioca Online",
+    "LOCAL": "Gioca in Locale",
+    "VS_COMPUTER": "Gioca contro il Computer"
+  },
+  "GAME_OVER": {
+    "TITLE": "Partita Terminata!",
+    "WINNER": "Ha vinto il giocatore",
+    "WHITE": "Bianco",
+    "BLACK": "Nero",
+    "NEW_GAME": "Nuova Partita"
+  },
+  "JOIN": {
+    "JOIN_GAME": "Partecipa alla Partita",
+    "NICKNAME": "Il tuo nickname",
+    "REQUIRED": "Obbligatorio",
+    "MIN_LENGTH": "Minimo 3 caratteri",
+    "NEXT": "Avanti",
+    "GAME_ID": "ID Partita",
+    "JOIN_AS": "Unisciti come"
+  },
+  "CHAT": {
+    "PLACEHOLDER": "Scrivi un messaggio...",
+    "CHAT_TITLE": "Chat:"
+  },
+  "FOOTER": {
+    "COPYRIGHT": "© {{year}} OnlineCheckers.org"
+  },
+  "RULES": {
+    "TITLE": "Dama Italiana - Regole e Come Giocare",
+    "INTRODUCTION": "La Dama Italiana è una variante tradizionale del gioco della dama, giocata su una scacchiera 8x8 con 12 pedine per giocatore. È la versione ufficiale regolamentata dalla Federazione Italiana Dama (FID) e giocata nei tornei in Italia.",
+    "INTRO_TEXT": "Con regole uniche che la distinguono da altre varianti europee, la Dama Italiana ha una lunga tradizione nella cultura italiana.",
+    "HISTORY_TITLE": "Storia della Dama Italiana",
+    "HISTORY_TEXT_1": "La Dama Italiana ha una storia ricca che si intreccia con la cultura italiana attraverso i secoli.",
+    "HISTORY_TEXT_2": "Le prime tracce documentate risalgono al XV secolo, quando varianti del gioco erano già diffuse nelle corti rinascimentali italiane.",
+    "HISTORY_TEXT_3": "Durante il periodo del Risorgimento, il gioco divenne un passatempo popolare in caffè e circoli, luoghi di incontro e discussione.",
+    "HISTORY_TEXT_4": "Nel 1924, con la fondazione della Federazione Italiana Dama (FID), il gioco acquisì regole standardizzate e riconoscimento ufficiale.",
+    "BOARD_TITLE": "La Scacchiera",
+    "BOARD_TEXT_1": "La Dama Italiana si gioca su una scacchiera tradizionale 8x8 con 64 caselle, utilizzando solo le 32 caselle scure.",
+    "BOARD_TEXT_2": "All'inizio della partita, ogni giocatore dispone le proprie 12 pedine sulle caselle scure delle prime tre file davanti a sé.",
+    "MOVEMENT_TITLE": "Movimento e Cattura",
+    "MOVEMENT_TEXT_1": "Le pedine si muovono in diagonale avanti di una casella alla volta. Non possono muoversi all'indietro fino a quando non diventano dame.",
+    "MOVEMENT_TEXT_2": "La cattura avviene saltando sopra una pedina avversaria verso una casella vuota. La pedina saltata viene rimossa dal gioco.",
+    "MOVEMENT_TEXT_3": "Se dopo una cattura è possibile effettuarne altre, il giocatore deve continuare la sequenza con la stessa pedina fino a quando non sono più possibili ulteriori catture.",
+    "MOVEMENT_TEXT_4": "Quando sono possibili più sequenze di cattura, è obbligatorio scegliere quella che cattura il maggior numero di pedine. In caso di parità, si deve preferire la sequenza che cattura più dame.",
+    "KINGS_TITLE": "Le Dame",
+    "KINGS_TEXT_1": "Una pedina diventa dama quando raggiunge l'ultima traversa della scacchiera avversaria. Viene contrassegnata raddoppiando la pedina.",
+    "KINGS_TEXT_2": "A differenza della variante internazionale, nella Dama Italiana una dama può muoversi solo di una casella diagonale in qualsiasi direzione (avanti o indietro).",
+    "KINGS_TEXT_3": "Una dama cattura come una pedina normale, spostandosi di una sola casella oltre la pedina catturata, ma può farlo in tutte le direzioni diagonali."
+  }
+}
