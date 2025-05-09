@@ -66,17 +66,12 @@
           <div class="board">
             <div *ngFor="let row of board; let r = index" class="row">
               <div *ngFor="let cell of row; let c = index"
-                  class="square"
-                  [ngClass]="{
-                    'light': isLight(r, c),
-                    'dark': !isLight(r, c),
-                    'highlight': isHighlight(r, c),
-                    'selected': isSelected(r, c)
-                  }"
-                  (click)="onCellClick(r, c)">
+                   class="square"
+                   [ngClass]="getCellClass(r, c)"
+                   (click)="selectCell(r, c)">
                 <div *ngIf="cell.hasPiece"
-                    class="piece"
-                    [ngClass]="[cell.pieceColor || '', cell.isKing ? 'king' : '']">
+                     class="piece"
+                     [ngClass]="[cell.pieceColor || '', cell.isKing ? 'king' : '']">
                   <div *ngIf="cell.isKing" class="crown">♛</div>
                 </div>
               </div>
@@ -133,17 +128,12 @@
           <div class="board">
             <div *ngFor="let row of board; let r = index" class="row">
               <div *ngFor="let cell of row; let c = index"
-                  class="square"
-                  [ngClass]="{
-                    'light': isLight(r, c),
-                    'dark': !isLight(r, c),
-                    'highlight': isHighlight(r, c),
-                    'selected': isSelected(r, c)
-                  }"
-                  (click)="onCellClick(r, c)">
+                   class="square"
+                   [ngClass]="getCellClass(r, c)"
+                   (click)="selectCell(r, c)">
                 <div *ngIf="cell.hasPiece"
-                    class="piece"
-                    [ngClass]="[cell.pieceColor || '', cell.isKing ? 'king' : '']">
+                     class="piece"
+                     [ngClass]="[cell.pieceColor || '', cell.isKing ? 'king' : '']">
                   <div *ngIf="cell.isKing" class="crown">♛</div>
                 </div>
               </div>
@@ -170,7 +160,20 @@
     <!-- Informazioni sul turno -->
     <div class="status-info mt-3">
       <div *ngIf="playerTeam" class="turn-status-card">
-        <div *ngIf="isPlayerTurn()" class="turn-status turn-active">
+        <div *ngIf="isCapturingMultiple" class="turn-status turn-active capture-multiple">
+          <div class="turn-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"></circle>
+              <polyline points="12 6 12 12 16 14"></polyline>
+            </svg>
+          </div>
+          <div class="turn-text">
+            <h4>Cattura multipla!</h4>
+            <p>Devi continuare a catturare con la stessa pedina.</p>
+          </div>
+        </div>
+
+        <div *ngIf="isPlayerTurn() && !isCapturingMultiple" class="turn-status turn-active">
           <div class="turn-icon">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <circle cx="12" cy="12" r="10"></circle>
@@ -183,7 +186,7 @@
           </div>
         </div>
 
-        <div *ngIf="!isPlayerTurn()" class="turn-status turn-waiting">
+        <div *ngIf="!isPlayerTurn() && !isCapturingMultiple" class="turn-status turn-waiting">
           <div class="turn-icon">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <circle cx="12" cy="12" r="10"></circle>
@@ -233,9 +236,9 @@
     <app-online-moves [moves]="moves"></app-online-moves>
 
     <app-chat
-    [gameId]="gameID"
-    [nickname]="nickname ?? ''"
-    [chatHistory]="chatHistory">
+      [gameId]="gameID"
+      [nickname]="nickname ?? ''"
+      [chatHistory]="chatHistory">
 
     </app-chat>
   </div>
