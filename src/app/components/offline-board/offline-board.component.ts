@@ -267,46 +267,49 @@ export class OfflineBoardComponent {
    */
   // Modifica il metodo makeMove
   makeMove(fromRow: number, fromCol: number, toRow: number, toCol: number): void {
-    const isCapture = Math.abs(fromRow - toRow) === 2 && Math.abs(fromCol - toCol) === 2;
-
-    // Update the board
+    const isCapture = Math.abs(fromRow - toRow) === 2;
     const movingPiece = this.board[fromRow][fromCol];
 
-    // Make the move
-    this.board[toRow][toCol] = {
-      hasPiece: true,
-      pieceColor: movingPiece.pieceColor,
-      isKing: movingPiece.isKing
-    };
-    this.board[fromRow][fromCol] = {
-      hasPiece: false,
-      pieceColor: null,
-      isKing: false
-    };
+    // Verifica se diventerà dama
+    const willBecomeKing = !movingPiece.isKing && (
+        (movingPiece.pieceColor === 'white' && toRow === 0) ||
+        (movingPiece.pieceColor === 'black' && toRow === 7)
+    );
 
-    // Handle captures
-    let capturedPiece = null;
+    // Gestione cattura
     if (isCapture) {
-      // Calcola la posizione della pedina catturata
-      const captureRow = fromRow + (toRow - fromRow) / 2;
-      const captureCol = fromCol + (toCol - fromCol) / 2;
+        const captureRow = (fromRow + toRow) / 2;
+        const captureCol = (fromCol + toCol) / 2;
+        this.board[captureRow][captureCol] = {
+            hasPiece: false,
+            pieceColor: null,
+            isKing: false
+        };
+        this.audioService.playCaptureSound();
+    } else {
+        this.audioService.playMoveSound();
+    }
 
-      // Rimuovi il pezzo catturato
-      this.board[captureRow][captureCol] = {
+    // Sposta il pezzo
+    this.board[toRow][toCol] = {
+        hasPiece: true,
+        pieceColor: movingPiece.pieceColor,
+        isKing: willBecomeKing || movingPiece.isKing
+
+    };
+
+    this.board[fromRow][fromCol] = {
         hasPiece: false,
         pieceColor: null,
         isKing: false
-      };
+    };
+
+    // Suono dama
+    if (willBecomeKing) {
+        this.audioService.playKingSound();
     }
 
-    // Check for king promotion
-    if (!movingPiece.isKing) {
-      if ((movingPiece.pieceColor === 'white' && toRow === 0) ||
-          (movingPiece.pieceColor === 'black' && toRow === 7)) {
-        this.board[toRow][toCol].isKing = true;
-      }
-    }
-
+    // ... resto del codice esistente ...
     // Record the move
     this.moves = [...this.moves, {
       from: { row: fromRow, col: fromCol },

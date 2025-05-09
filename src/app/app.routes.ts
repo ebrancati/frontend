@@ -19,6 +19,7 @@ export const routes: Routes = [
   { path: 'locale',       component: LocalePlayerPage },
   { path: 'vs-bot',       component: RulesContentPage },
   { path: 'join/:gameId', component: JoinComponent    },
+  
 
   { path: '**', redirectTo: '/play' },
 ];
