@@ -1,8 +1,7 @@
 import { Component } from '@angular/core';
 import { NgClass, NgForOf, NgIf } from '@angular/common';
-import { MovesComponent } from '../moves/moves.component';
+import { OfflineMovesComponent as MovesComponent } from '../offline-moves/offline-moves.component';
 import { AudioService } from '../../../services/audio.service';
-
 
 /**
  * Interface representing a cell on the checkers board

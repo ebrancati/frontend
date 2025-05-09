@@ -1,5 +1,5 @@
 import { NgClass, NgForOf, NgIf } from '@angular/common';
-import { MovesComponent } from '../moves/moves.component';
+import { OnlineMovesComponent as MovesComponent } from '../online-moves/online-moves.component';
 import { ChatComponent } from '../chat/chat.component';
 import { MoveServiceService } from '../../../services/move-service.service';
 import { GameService } from '../../../services/game.service';
@@ -17,6 +17,7 @@ export interface PlayerDto {
 }
 
 export interface GameResponse {
+  cronologiaMosse: string[];
   chat: string;
   id: string;
   board: string[][];
@@ -86,6 +87,11 @@ export class OnlineBoardComponent implements OnInit, OnDestroy {
   rows: number[] = [1, 2, 3, 4, 5, 6, 7, 8];
   nickname: string | null = localStorage.getItem('nickname');
 
+  // All'inizio della classe OnlineBoardComponent, con le altre proprietà
+  lastProcessedMoveCount: number = 0;
+
+  // FERMA IL POLLING QUANDO L'UTENTE STA FACENDO MOSSE MULTIPLE
+  isCapturingMultiple: boolean = false;
 
   // Proprietà per tenere traccia dello stato di copia del link della partita
   linkCopied: boolean = false;
@@ -136,9 +142,16 @@ export class OnlineBoardComponent implements OnInit, OnDestroy {
 
     this.gameService.getGameState(this.gameID).subscribe({
       next: (response: GameResponse) => {
+
+        if (this.isCapturingMultiple) {
+          console.log('Ignorando aggiornamento di stato durante cattura multipla');
+          // Aggiorna solo la chat, non lo stato della scacchiera
+          this.chatHistory = response.chat ?? '';
+          return;
+        }
+
         console.log('Game state response:', response);
         this.chatHistory = response.chat ?? '';
-
 
         const nickname = localStorage.getItem('nickname');
         console.log('Nickname corrente in localStorage:', nickname);
@@ -168,6 +181,10 @@ export class OnlineBoardComponent implements OnInit, OnDestroy {
         // Aggiorna lo stato del gioco
         this.updateGameState(response);
 
+        // Se abbiamo la cronologia mosse, aggiorna le mosse
+        if (response.cronologiaMosse && Array.isArray(response.cronologiaMosse)) {
+          this.updateMovesFromHistory(response.cronologiaMosse);
+        }
       },
       error: (error) => {
         console.error('Errore nel recupero dello stato del gioco:', error);
@@ -176,8 +193,44 @@ export class OnlineBoardComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Updates the game state based on the response from the server
+   * Updates moves array from server move history
+   * @param moveHistory - Array of move strings from server
    */
+  updateMovesFromHistory(moveHistory: string[]): void {
+
+    this.moves = [];
+    
+    for (const moveString of moveHistory) {
+      // Parse move string in format "fromRow,fromCol-toRow,toCol-player"
+      const parts = moveString.split('-');
+      if (parts.length < 3) continue; // Skip invalid format
+      
+      const fromRow = parseInt(parts[0][0]);
+      const fromCol = parseInt(parts[0][1]);
+      const toRow = parseInt(parts[1][0]);
+      const toCol = parseInt(parts[1][1]);
+      
+      // Check if this is a capture move (distance = 2)
+      const isCapture = Math.abs(fromRow - toRow) === 2 && Math.abs(fromCol - toCol) === 2;
+      
+      // Create move object
+      const move: Move = {
+        from: { row: fromRow, col: fromCol },
+        to: { row: toRow, col: toCol }
+      };
+      
+      // Add captured piece if it's a capture
+      if (isCapture) {
+        const capturedRow = Math.floor((fromRow + toRow) / 2);
+        const capturedCol = Math.floor((fromCol + toCol) / 2);
+        move.captured = [{ row: capturedRow, col: capturedCol }];
+      }
+      
+      // Add the move to the moves array
+      this.moves.push(move);
+    }
+  }
+
   /**
    * Updates the game state based on the response from the server
    */
@@ -468,69 +521,89 @@ export class OnlineBoardComponent implements OnInit, OnDestroy {
    */
   makeMove(fromRow: number, fromCol: number, toRow: number, toCol: number): void {
     if (!this.isPlayerTurn()) return;
-
+  
     const isCapture = Math.abs(fromRow - toRow) === 2 && Math.abs(fromCol - toCol) === 2;
     const movingPiece = this.board[fromRow][fromCol];
-
+  
     // ─── RIMUOVI SUBITO IL PEZZO CATTURATO────────────────────
     if (isCapture) {
       const capRow = (fromRow + toRow) / 2;
       const capCol = (fromCol + toCol) / 2;
       this.board[capRow][capCol] = { hasPiece: false, pieceColor: null, isKing: false };
-      this.audioService.playCaptureSound();  // Solo questa riga da aggiungere
+      this.audioService.playCaptureSound();
     } else {
       this.audioService.playMoveSound();
-
     }
-
+  
     // ─── SPOSTA IL PEZZO──────────────────────────────────────
     this.board[toRow][toCol] = { ...movingPiece };
     this.board[fromRow][fromCol] = { hasPiece: false, pieceColor: null, isKing: false };
-
+  
     // ─── VERIFICA ULTERIORI CATTURE───────────────────────────
     const further = this.getCapturesForPiece(toRow, toCol);
-
+  
     if (isCapture && further.length > 0) {
       // inizio o continua la catena di cattura
       if (!this.captureChainStart) {
         this.captureChainStart = { row: fromRow, col: fromCol };
+        this.isCapturingMultiple = true;
       }
+      
+      // Aggiungi la mossa corrente alla cronologia locale
+      this.moves = [...this.moves, {
+        from: { row: fromRow, col: fromCol },
+        to: { row: toRow, col: toCol },
+        captured: [{ row: (fromRow + toRow) / 2, col: (fromCol + toCol) / 2 }]
+      }];
+      
       this.selectedCell = { row: toRow, col: toCol };
       this.highlightedCells = further.map(m => m.to);
-
     } else {
       // fine catena o mossa semplice → invia al server
       const start = this.captureChainStart || { row: fromRow, col: fromCol };
-
-      // prima di inviare la mossa al server salva la mossa nel componente moves
-      this.moves = [...this.moves, {
-        from: { row: start.row, col: start.col },
-        to: { row: toRow, col: toCol },
-        captured: isCapture ? [{ row: (fromRow + toRow) / 2, col: (fromCol + toCol) / 2 }] : undefined
-      }];
-
+      
+      // Se è stata una mossa semplice (non cattura) o l'ultima di una catena di catture,
+      // aggiungi la mossa finale alla cronologia locale
+      if (!isCapture || !this.captureChainStart) {
+        this.moves = [...this.moves, {
+          from: { row: fromRow, col: fromCol },
+          to: { row: toRow, col: toCol },
+          captured: isCapture ? [{ row: (fromRow + toRow) / 2, col: (fromCol + toCol) / 2 }] : undefined
+        }];
+      }
+  
       const payload: MoveP = {
         from: `${start.row}${start.col}`,
         to: `${toRow}${toCol}`,
         player: movingPiece.pieceColor!
       };
-
+  
       this.moveService.saveMove(payload, this.gameID).subscribe({
-        next: res => this.updateGameState(res),
+        next: res => {
+          // Quando riceviamo la risposta dal server, aggiorniamo lo stato
+          this.updateGameState(res);
+          
+          // Se il backend è stato modificato per inviare la cronologia mosse,
+          // possiamo aggiornare le mosse dal server
+          if (res && (res as any).cronologiaMosse) {
+            this.updateMovesFromHistory((res as any).cronologiaMosse);
+          }
+        },
         error: err => console.error('Errore salvataggio mossa', err)
       });
-
+  
       // pulisci stato cattura e highlights
       this.captureChainStart = null;
       this.selectedCell = null;
       this.highlightedCells = [];
 
+      this.isCapturingMultiple = false;
+  
       // cambia turno e controlla fine partita
       this.currentPlayer = this.currentPlayer === 'white' ? 'black' : 'white';
       this.checkGameOver();
     }
   }
-
 
   /**
    * Checks if the game is over and determines the winner
