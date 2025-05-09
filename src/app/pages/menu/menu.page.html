@@ -1,4 +1,4 @@
-<div class="menu-container">
+<div class="menu-container mt-5">
   <h2>Seleziona Modalità di Gioco</h2>
 
   <div class="menu-buttons">
@@ -6,21 +6,21 @@
       class="menu-button"
       [class.selected]="selectedMode === 'online'"
       (click)="selectMode('online')">
-      Gioca Online
+      Gioca Online 🌐
     </button>
 
     <button
       class="menu-button"
       [class.selected]="selectedMode === 'local'"
       (click)="selectMode('local')">
-      Gioca in Locale
+      Gioca in Locale 👩🏿‍🦲
     </button>
 
     <button
       class="menu-button btn btn-secondary disabled"
       [class.selected]="selectedMode === 'bot'"
       (click)="selectMode('bot')">
-      Gioca contro il Computer
+      Gioca contro il Computer ⛔
     </button>
   </div>
 </div>

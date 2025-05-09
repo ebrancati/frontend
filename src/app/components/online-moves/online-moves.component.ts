@@ -19,15 +19,15 @@ interface TurnMoves {
 }
 
 @Component({
-  selector: 'app-moves',
+  selector: 'app-online-moves',
   standalone: true,
   imports: [
     CommonModule
   ],
-  templateUrl: './moves.component.html',
-  styleUrl: './moves.component.css',
+  templateUrl: './online-moves.component.html',
+  styleUrl: './online-moves.component.css',
 })
-export class MovesComponent implements OnChanges {
+export class OnlineMovesComponent implements OnChanges {
   @Input() moves: Move[] = [];
   displayMoves: TurnMoves[] = [];
 
@@ -149,9 +149,9 @@ export class MovesComponent implements OnChanges {
   /**
    * Converte le coordinate della scacchiera in notazione algebrica
    */
-  private toAlgebraic(row: number, col: number): string {
+  protected toAlgebraic(row: number, col: number): string {
     const columns = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
-    const rows = ['8', '7', '6', '5', '4', '3', '2', '1'];
+    const rows = ['1', '2', '3', '4', '5', '6', '7', '8'];
     return columns[col] + rows[row];
   }
 
