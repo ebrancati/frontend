@@ -169,8 +169,22 @@
 
     <!-- Informazioni sul turno -->
     <div class="status-info mt-3">
+      <div *ngIf="needsOpponent()" class="turn-status turn-waiting">
+        <div class="turn-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="10" y1="15" x2="10" y2="9"></line>
+            <line x1="14" y1="15" x2="14" y2="9"></line>
+          </svg>
+        </div>
+        <div class="turn-text">
+          <h4>In attesa dell'avversario...</h4>
+          <p>La partita inizierà quando un altro giocatore si unirà.</p>
+        </div>
+      </div>
+
       <div *ngIf="playerTeam" class="turn-status-card">
-        <div *ngIf="isPlayerTurn()" class="turn-status turn-active">
+        <div *ngIf="!needsOpponent() && isPlayerTurn()" class="turn-status turn-active">
           <div class="turn-icon">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <circle cx="12" cy="12" r="10"></circle>
@@ -183,7 +197,7 @@
           </div>
         </div>
 
-        <div *ngIf="!isPlayerTurn()" class="turn-status turn-waiting">
+        <div *ngIf="!needsOpponent() && !isPlayerTurn()" class="turn-status turn-waiting">
           <div class="turn-icon">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <circle cx="12" cy="12" r="10"></circle>

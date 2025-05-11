@@ -1,9 +1,11 @@
 import { Component } from '@angular/core';
 import { Router } from '@angular/router';
+import { TranslateModule } from '@ngx-translate/core';
 
 @Component({
   selector: 'page-menu',
   templateUrl: './menu.page.html',
+  imports: [TranslateModule],
   styleUrls: ['./menu.page.css']
 })
 export class MenuPage {

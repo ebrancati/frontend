@@ -4,12 +4,13 @@ import { GameService } from "../../../services/game.service";
 import { PlayerService } from "../../../services/player.service";
 import { FormsModule } from '@angular/forms';
 import {switchMap} from 'rxjs';
+import { TranslateModule } from '@ngx-translate/core';
 
 @Component({
   selector: 'page-login',
   standalone: true,
   imports: [
-    FormsModule
+    FormsModule, TranslateModule
   ],
   templateUrl: './login.page.html',
 })

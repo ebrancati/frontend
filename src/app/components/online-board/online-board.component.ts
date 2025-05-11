@@ -1,3 +1,4 @@
+import { Router } from '@angular/router';
 import { NgClass, NgForOf, NgIf } from '@angular/common';
 import { OnlineMovesComponent as MovesComponent } from '../online-moves/online-moves.component';
 import { ChatComponent } from '../chat/chat.component';
@@ -9,6 +10,7 @@ import { interval, Subscription } from 'rxjs';
 import {MoveP} from '../../../model/entities/MoveP';
 import {Component, Inject, OnDestroy, OnInit} from '@angular/core';
 import { AudioService } from '../../../services/audio.service';
+import { TranslateModule } from '@ngx-translate/core';
 
 export interface PlayerDto {
   id: string;
@@ -29,6 +31,7 @@ export interface GameResponse {
   partitaTerminata: boolean;
   vincitore: 'WHITE' | 'BLACK' | 'NONE';
   players: PlayerDto[];
+  lastMultiCapturePath?: string[];
 }
 /**
  * Interface representing a cell on the checkers board
@@ -56,7 +59,8 @@ interface Move {
     NgClass,
     NgIf,
     MovesComponent,
-    ChatComponent
+    ChatComponent,
+    TranslateModule
   ],
   templateUrl: './online-board.component.html',
   styleUrl: './online-board.component.css',
@@ -86,6 +90,13 @@ export class OnlineBoardComponent implements OnInit, OnDestroy {
   columns: string[] = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
   rows: number[] = [1, 2, 3, 4, 5, 6, 7, 8];
   nickname: string | null = localStorage.getItem('nickname');
+  capturePath: string[] = [];
+
+  isAnimatingCapture: boolean = false;
+  captureAnimationPath: { row: number, col: number }[] = [];
+  captureAnimationStep: number = 0;
+  captureAnimationInterval: any = null;
+  lastAnimatedCaptureId: string = '';
 
   // All'inizio della classe OnlineBoardComponent, con le altre proprietà
   lastProcessedMoveCount: number = 0;
@@ -101,6 +112,7 @@ export class OnlineBoardComponent implements OnInit, OnDestroy {
     private moveService: MoveServiceService,
     private gameService: GameService,
     private route: ActivatedRoute,
+    private router: Router,
     private audioService: AudioService,
     @Inject(DOCUMENT) private document: Document
   ) {
@@ -118,6 +130,10 @@ export class OnlineBoardComponent implements OnInit, OnDestroy {
   ngOnDestroy() {
     if (this.pollingSubscription) {
       this.pollingSubscription.unsubscribe();
+    }
+    
+    if (this.captureAnimationInterval) {
+      clearInterval(this.captureAnimationInterval);
     }
   }
 
@@ -138,24 +154,17 @@ export class OnlineBoardComponent implements OnInit, OnDestroy {
    * Fetch the current game state from the backend
    */
   fetchGameState() {
-    if (!this.gameID) return;
-
+    if (!this.gameID || this.isAnimatingCapture) return;
+    
     this.gameService.getGameState(this.gameID).subscribe({
       next: (response: GameResponse) => {
-
-        if (this.isCapturingMultiple) {
-          console.log('Ignorando aggiornamento di stato durante cattura multipla');
-          // Aggiorna solo la chat, non lo stato della scacchiera
-          this.chatHistory = response.chat ?? '';
-          return;
-        }
-
-        console.log('Game state response:', response);
-        this.chatHistory = response.chat ?? '';
-
+        console.log("Risposta dal server:", response);
+        console.log("Players nella risposta:", response.players);
+        
+        // Log del nickname attuale
         const nickname = localStorage.getItem('nickname');
         console.log('Nickname corrente in localStorage:', nickname);
-
+        
         if (nickname) {
           // Cerca il giocatore tra quelli nella partita
           const playerMatch = response.players.find(p => p.nickname === nickname);
@@ -163,12 +172,26 @@ export class OnlineBoardComponent implements OnInit, OnDestroy {
             this.playerTeam = playerMatch.team as 'WHITE' | 'BLACK';
             console.log(`Trovato giocatore con nickname ${nickname}, team assegnato: ${this.playerTeam}`);
           } else {
-            console.log(`Nessun giocatore con nickname ${nickname} trovato nei giocatori della partita`);
+            console.log(`Nessun giocatore con nickname ${nickname} trovato nei giocatori della partita:`, response.players);
           }
         } else {
           console.log('Nessun nickname trovato in localStorage');
         }
 
+        // Se stiamo facendo una cattura multipla, non aggiorniamo lo stato
+        if (this.isCapturingMultiple) {
+          console.log("In corso cattura multipla, aggiorno solo la chat");
+          // Aggiorna solo la chat, non lo stato della scacchiera
+          this.chatHistory = response.chat ?? '';
+          return;
+        }
+
+        // Salva lo stato attuale della scacchiera per confronto
+        const oldBoard = JSON.parse(JSON.stringify(this.board));
+        
+        // Aggiorna la chat
+        this.chatHistory = response.chat ?? '';
+        
         // Aggiorna i nickname dei giocatori
         for (const player of response.players) {
           if (player.team === 'WHITE') {
@@ -177,14 +200,41 @@ export class OnlineBoardComponent implements OnInit, OnDestroy {
             this.blackPlayerNickname = player.nickname;
           }
         }
-
-        // Aggiorna lo stato del gioco
+        
+        // SOLUZIONE al bug dell'animazione che si ripete
+        // Crea un ID univoco per questa potenziale animazione di cattura
+        const captureId = response.lastMultiCapturePath ? 
+                          response.lastMultiCapturePath.join('-') + '-' + response.turno :
+                          '';
+        
+        // Se c'è un percorso di cattura multipla, non l'abbiamo già animato e il turno è cambiato
+        if (response.lastMultiCapturePath && 
+            response.lastMultiCapturePath.length > 1 &&
+            response.turno === this.playerTeam && 
+            captureId !== this.lastAnimatedCaptureId) {
+            
+          console.log("Rilevata nuova cattura multipla dell'avversario, avvio animazione");
+          // Salva questo ID come l'ultimo animato
+          this.lastAnimatedCaptureId = captureId;
+          
+          // Avvia l'animazione della cattura
+          this.startCaptureAnimation(oldBoard, response.lastMultiCapturePath, () => {
+            // Callback alla fine dell'animazione: aggiorna completamente lo stato
+            this.updateGameState(response);
+          });
+          return;
+        }
+        
+        // Altrimenti, aggiorna lo stato normalmente
         this.updateGameState(response);
-
+        
         // Se abbiamo la cronologia mosse, aggiorna le mosse
         if (response.cronologiaMosse && Array.isArray(response.cronologiaMosse)) {
           this.updateMovesFromHistory(response.cronologiaMosse);
         }
+        
+        console.log("Stato dopo l'aggiornamento: playerTeam=", this.playerTeam, "currentPlayer=", this.currentPlayer);
+        console.log("isPlayerTurn() restituisce:", this.isPlayerTurn());
       },
       error: (error) => {
         console.error('Errore nel recupero dello stato del gioco:', error);
@@ -235,6 +285,10 @@ export class OnlineBoardComponent implements OnInit, OnDestroy {
    * Updates the game state based on the response from the server
    */
   updateGameState(response: GameResponse) {
+    // Salva lo stato precedente per confronto
+    const oldBoard = this.board ? JSON.parse(JSON.stringify(this.board)) : null;
+    const oldTurn = this.currentPlayer;
+
     // Aggiorna il turno corrente
     this.currentPlayer = response.turno === 'WHITE' ? 'white' : 'black';
 
@@ -242,39 +296,57 @@ export class OnlineBoardComponent implements OnInit, OnDestroy {
     this.updateBoardFromState(response.board);
 
     // Aggiorna conteggi pedine
+    const oldWhiteCount = this.whiteCount;
+    const oldBlackCount = this.blackCount;
     this.whiteCount = response.pedineW + response.damaW;
     this.blackCount = response.pedineB + response.damaB;
+
+    // Riproduzione suono quando cambia il turno verso il giocatore (significa che l'avversario ha fatto una mossa)
+    // Solo se non siamo in un'animazione di cattura (che ha già i suoi suoni)
+    if (oldTurn !== this.currentPlayer && 
+        this.currentPlayer === (this.playerTeam === 'WHITE' ? 'white' : 'black') && 
+        !this.isAnimatingCapture) {
+      
+      // Determina se è stata una cattura o una mossa normale in base al conteggio pedine
+      const totalOldCount = oldWhiteCount + oldBlackCount;
+      const totalNewCount = this.whiteCount + this.blackCount;
+      
+      if (totalNewCount < totalOldCount) {
+        // È stata una cattura (il numero totale di pedine è diminuito)
+        this.audioService.playCaptureSound();
+        console.log("Riproduco suono cattura per mossa dell'avversario");
+      } else {
+        // È stata una mossa normale
+        this.audioService.playMoveSound();
+        console.log("Riproduco suono mossa per mossa dell'avversario");
+      }
+    }
 
     // Aggiorna stato fine partita
     this.gameOver = response.partitaTerminata;
 
+    // Mostra il modale di fine partita sia al vincitore che al perdente
     if (this.gameOver && response.vincitore !== 'NONE') {
-
-      // partita terminata, interrompi polling
-      if (this.pollingSubscription) {
-        this.pollingSubscription.unsubscribe();
-        this.pollingSubscription = null;
-      }
-
+      // Converti il vincitore dal formato del backend (WHITE/BLACK) al formato del frontend (white/black)
       this.winner = response.vincitore === 'WHITE' ? 'white' : 'black';
+      
+      // Riproduci il suono appropriato
       if (this.playerTeam === response.vincitore) {
         this.audioService.playWinSound();
       } else {
         this.audioService.playLoseSound();
       }
 
+      // Mostra sempre il modale di fine partita, indipendentemente da chi ha vinto
+      this.showGameOverModal = true;
+      
+      console.log(`Partita terminata. Vincitore: ${this.winner}. Il tuo team: ${this.playerTeam}`);
 
-      // Elimina la partita dal server
-      this.gameService.deleteGame(this.gameID).subscribe({
-        next: () => {
-          console.log('Partita eliminata con successo');
-          this.showGameOverModal = true;
-        },
-        error: (err) => {
-          console.error('Errore nell\'eliminazione della partita:', err);
-          this.showGameOverModal = true;
-        }
-      });
+      // Se il polling è attivo, lo interrompiamo alla fine della partita
+      if (this.pollingSubscription) {
+        this.pollingSubscription.unsubscribe();
+        this.pollingSubscription = null;
+      }
     }
 
     console.log(`Stato aggiornato: Turno ${this.currentPlayer}, Team giocatore: ${this.playerTeam}`);
@@ -299,14 +371,22 @@ export class OnlineBoardComponent implements OnInit, OnDestroy {
    * Check if it's the current player's turn
    */
   isPlayerTurn(): boolean {
-    if (!this.playerTeam) return false;
-
+    // Se non abbiamo ancora un ruolo, non è il nostro turno
+    if (!this.playerTeam) {
+      return false;
+    }
+    
+    // Se manca un avversario, non è ancora il momento di giocare
+    if (this.needsOpponent()) {
+      return false;
+    }
+    
+    // Verifica se è il nostro turno in base al colore
     const isPlayerTurn = (this.playerTeam === 'WHITE' && this.currentPlayer === 'white') ||
-                          (this.playerTeam === 'BLACK' && this.currentPlayer === 'black');
-
+                        (this.playerTeam === 'BLACK' && this.currentPlayer === 'black');
+    
     return isPlayerTurn;
   }
-
   /**
    * Initialize the game board with pieces in starting positions
    */
@@ -474,33 +554,58 @@ export class OnlineBoardComponent implements OnInit, OnDestroy {
    * @returns Array of capture moves for the piece
    */
   getCapturesForPiece(row: number, col: number): Move[] {
+    console.log(`Cercando catture per pezzo in [${row},${col}]`);
     const captures: Move[] = [];
     const cell = this.board[row][col];
 
-    // Define directions to check based on piece type
-    const directions = cell.isKing
-      ? [[1, 1], [1, -1], [-1, 1], [-1, -1]] // Kings can capture in all diagonal directions
-      : cell.pieceColor === 'white' ? [[-1, 1], [-1, -1]] : [[1, 1], [1, -1]]; // Regular pieces move forward only
+    if (!cell.hasPiece) {
+      console.log('La cella non contiene un pezzo');
+      return captures;
+    }
 
-    // Check each direction for capture opportunities
+    console.log(`Pezzo trovato: colore=${cell.pieceColor}, re=${cell.isKing}`);
+
+    // Definisci le direzioni in base al tipo di pezzo
+    let directions: number[][];
+    
+    if (cell.isKing) {
+      // Le dame possono muoversi e catturare in tutte le direzioni
+      directions = [[-1, -1], [-1, 1], [1, -1], [1, 1]];
+    } else {
+      // Le pedine normali possono catturare solo in avanti e lateralmente
+      // Per il bianco, avanti è -1 (verso l'alto)
+      // Per il nero, avanti è +1 (verso il basso)
+      if (cell.pieceColor === 'white') {
+        directions = [[-1, -1], [-1, 1]]; // Solo in avanti per il bianco
+      } else {
+        directions = [[1, -1], [1, 1]]; // Solo in avanti per il nero
+      }
+    }
+
+    // Controlla ogni direzione per opportunità di cattura
     directions.forEach(([dr, dc]) => {
       const captureRow = row + dr;
       const captureCol = col + dc;
       const landRow = row + 2 * dr;
       const landCol = col + 2 * dc;
 
-      // Make sure positions are valid
+      console.log(`Verificando direzione [${dr},${dc}]: posizione cattura [${captureRow},${captureCol}], atterraggio [${landRow},${landCol}]`);
+
+      // Assicurati che le posizioni siano valide
       if (!this.isValidPosition(captureRow, captureCol) || !this.isValidPosition(landRow, landCol)) {
+        console.log('Posizioni non valide, fuori dalla scacchiera');
         return;
       }
 
-      // ottiene la cella che contiene il pezzo avversario che potrebbe essere catturato
       const captureCell = this.board[captureRow][captureCol];
-      // ottiene la cella in cui il pezzo atterrerebbe dopo aver effettuato la cattura
       const landCell = this.board[landRow][landCol];
 
-      // Check if there's an opponent's piece to capture and an empty cell to land on
+      console.log(`Cella da catturare: hasPiece=${captureCell.hasPiece}, colore=${captureCell.pieceColor}`);
+      console.log(`Cella di atterraggio: hasPiece=${landCell.hasPiece}`);
+
+      // Controlla se c'è un pezzo avversario da catturare e una cella vuota su cui atterrare
       if (captureCell.hasPiece && captureCell.pieceColor !== cell.pieceColor && !landCell.hasPiece) {
+        console.log('Cattura trovata!');
         captures.push({
           from: { row, col },
           to: { row: landRow, col: landCol },
@@ -509,6 +614,7 @@ export class OnlineBoardComponent implements OnInit, OnDestroy {
       }
     });
 
+    console.log(`Totale catture trovate: ${captures.length}`);
     return captures;
   }
 
@@ -521,35 +627,81 @@ export class OnlineBoardComponent implements OnInit, OnDestroy {
    */
   makeMove(fromRow: number, fromCol: number, toRow: number, toCol: number): void {
     if (!this.isPlayerTurn()) return;
-  
+
+    console.log(`Esecuzione mossa da [${fromRow},${fromCol}] a [${toRow},${toCol}]`);
+    
     const isCapture = Math.abs(fromRow - toRow) === 2 && Math.abs(fromCol - toCol) === 2;
-    const movingPiece = this.board[fromRow][fromCol];
-  
-    // ─── RIMUOVI SUBITO IL PEZZO CATTURATO────────────────────
+    console.log(`Questa è una mossa di cattura? ${isCapture}`);
+    
+    const movingPiece = { ...this.board[fromRow][fromCol] };
+    console.log(`Pezzo in movimento: colore=${movingPiece.pieceColor}, re=${movingPiece.isKing}`);
+
+    // Per le catture, rimuoviamo subito il pezzo catturato per feedback visivo
     if (isCapture) {
       const capRow = (fromRow + toRow) / 2;
       const capCol = (fromCol + toCol) / 2;
+      console.log(`Rimozione pezzo catturato in [${capRow},${capCol}]`);
+      
+      const capturedPiece = this.board[capRow][capCol];
+      console.log(`Pezzo catturato: colore=${capturedPiece.pieceColor}, re=${capturedPiece.isKing}`);
+      
+      // Verifica che ci sia effettivamente un pezzo da catturare
+      if (!capturedPiece.hasPiece) {
+        console.error('Errore: non c\'è un pezzo da catturare!');
+        return;
+      }
+      
+      // Verifica che sia un pezzo avversario
+      if (capturedPiece.pieceColor === movingPiece.pieceColor) {
+        console.error('Errore: non puoi catturare i tuoi pezzi!');
+        return;
+      }
+      
       this.board[capRow][capCol] = { hasPiece: false, pieceColor: null, isKing: false };
       this.audioService.playCaptureSound();
     } else {
       this.audioService.playMoveSound();
     }
-  
-    // ─── SPOSTA IL PEZZO──────────────────────────────────────
-    this.board[toRow][toCol] = { ...movingPiece };
+
+    // Sposta il pezzo
+    console.log('Spostamento del pezzo');
     this.board[fromRow][fromCol] = { hasPiece: false, pieceColor: null, isKing: false };
-  
-    // ─── VERIFICA ULTERIORI CATTURE───────────────────────────
+    
+    // IMPORTANTE: Verifica se la pedina diventa dama
+    let becomesKing = false;
+    if (!movingPiece.isKing) {
+      if ((movingPiece.pieceColor === 'white' && toRow === 0) || 
+          (movingPiece.pieceColor === 'black' && toRow === 7)) {
+        movingPiece.isKing = true;
+        becomesKing = true;
+        this.audioService.playKingSound();
+        console.log(`Pedina ${movingPiece.pieceColor} promossa a dama!`);
+      }
+    }
+    
+    // Aggiorna la pedina nella nuova posizione
+    this.board[toRow][toCol] = { ...movingPiece };
+
+    // Verifica ulteriori catture DOPO la promozione a dama
     const further = this.getCapturesForPiece(toRow, toCol);
-  
+    console.log(`Ulteriori catture disponibili: ${further.length}`);
+
     if (isCapture && further.length > 0) {
-      // inizio o continua la catena di cattura
+      console.log('Continuazione della catena di cattura');
+      // Inizio o continua la catena di cattura
       if (!this.captureChainStart) {
         this.captureChainStart = { row: fromRow, col: fromCol };
         this.isCapturingMultiple = true;
       }
       
-      // Aggiungi la mossa corrente alla cronologia locale
+      // Aggiungi questo passo al percorso di cattura
+      if (!this.capturePath) {
+        this.capturePath = [];
+      }
+      this.capturePath.push(`${toRow}${toCol}`);
+      console.log(`Percorso di cattura aggiornato: ${this.capturePath}`);
+      
+      // Aggiungi alla cronologia locale
       this.moves = [...this.moves, {
         from: { row: fromRow, col: fromCol },
         to: { row: toRow, col: toCol },
@@ -558,12 +710,21 @@ export class OnlineBoardComponent implements OnInit, OnDestroy {
       
       this.selectedCell = { row: toRow, col: toCol };
       this.highlightedCells = further.map(m => m.to);
-    } else {
-      // fine catena o mossa semplice → invia al server
+      
+      // Se è diventata dama, aggiorna l'interfaccia
+      if (becomesKing) {
+        // Forza un aggiornamento dell'interfaccia
+        setTimeout(() => {
+          // Questo è un trick per forzare Angular a fare change detection
+          this.board = [...this.board];
+        }, 100);
+      }
+    }
+    else {
+      // Fine catena o mossa semplice → invia al server
       const start = this.captureChainStart || { row: fromRow, col: fromCol };
       
-      // Se è stata una mossa semplice (non cattura) o l'ultima di una catena di catture,
-      // aggiungi la mossa finale alla cronologia locale
+      // Se è una mossa semplice o l'ultima cattura, aggiungi alla cronologia locale
       if (!isCapture || !this.captureChainStart) {
         this.moves = [...this.moves, {
           from: { row: fromRow, col: fromCol },
@@ -571,38 +732,69 @@ export class OnlineBoardComponent implements OnInit, OnDestroy {
           captured: isCapture ? [{ row: (fromRow + toRow) / 2, col: (fromCol + toCol) / 2 }] : undefined
         }];
       }
-  
+      
+      // Per l'ultima cattura in una sequenza, aggiungi anche questa posizione al percorso
+      if (isCapture && this.captureChainStart) {
+        this.capturePath.push(`${toRow}${toCol}`);
+      }
+      
+      // Preparazione del payload con path per il server
       const payload: MoveP = {
         from: `${start.row}${start.col}`,
         to: `${toRow}${toCol}`,
         player: movingPiece.pieceColor!
       };
-  
+      
+      // Aggiungi il percorso se è una cattura multipla
+      if (this.captureChainStart && this.capturePath && this.capturePath.length > 0) {
+        payload.path = this.capturePath;
+        console.log("Inviando percorso di cattura:", payload.path);
+      }
+
       this.moveService.saveMove(payload, this.gameID).subscribe({
         next: res => {
           // Quando riceviamo la risposta dal server, aggiorniamo lo stato
           this.updateGameState(res);
           
-          // Se il backend è stato modificato per inviare la cronologia mosse,
-          // possiamo aggiornare le mosse dal server
           if (res && (res as any).cronologiaMosse) {
             this.updateMovesFromHistory((res as any).cronologiaMosse);
           }
         },
         error: err => console.error('Errore salvataggio mossa', err)
       });
-  
-      // pulisci stato cattura e highlights
+
+      // Pulisci stato cattura, highlights e percorso
       this.captureChainStart = null;
       this.selectedCell = null;
       this.highlightedCells = [];
-
       this.isCapturingMultiple = false;
-  
-      // cambia turno e controlla fine partita
+      this.capturePath = []; // Reset percorso di cattura
+
+      // Cambia turno e controlla fine partita
       this.currentPlayer = this.currentPlayer === 'white' ? 'black' : 'white';
       this.checkGameOver();
     }
+  }
+
+  private buildCapturePathFromMoves(): string[] {
+    const path: string[] = [];
+    
+    // Filtra solo le mosse dall'inizio della catena multipla
+    const relevantMoves = this.moves.filter((move, index) => {
+      // Trova l'indice dove inizia la catena attuale
+      const startIndex = this.moves.findIndex(m => 
+        m.from.row === this.captureChainStart?.row && 
+        m.from.col === this.captureChainStart?.col
+      );
+      return index >= startIndex;
+    });
+    
+    // Estrai solo le posizioni di destinazione
+    relevantMoves.forEach(move => {
+      path.push(`${move.to.row}${move.to.col}`);
+    });
+    
+    return path;
   }
 
   /**
@@ -721,8 +913,118 @@ export class OnlineBoardComponent implements OnInit, OnDestroy {
    * Resets the game to its initial state
    */
   resetGame(): void {
-    this.initBoard();
+    this.router.navigate(['/play'])
   }
+
+  // Metodo per avviare l'animazione della cattura
+  startCaptureAnimation(oldBoard: Cell[][], path: string[], onComplete: () => void) {
+    console.log('Avvio animazione cattura lungo il percorso:', path);
+    
+    // Interrompi eventuali animazioni in corso
+    if (this.captureAnimationInterval) {
+      clearInterval(this.captureAnimationInterval);
+      this.captureAnimationInterval = null;
+    }
+    
+    this.isAnimatingCapture = true;
+    this.captureAnimationPath = path.map(pos => ({
+      row: parseInt(pos[0]),
+      col: parseInt(pos[1])
+    }));
+    this.captureAnimationStep = 0;
+    
+    // Copia la scacchiera originale da usare per l'animazione
+    this.board = JSON.parse(JSON.stringify(oldBoard));
+    
+    // Identifica il pezzo che sta catturando
+    const startRow = this.captureAnimationPath[0].row;
+    const startCol = this.captureAnimationPath[0].col;
+    const piece = { ...this.board[startRow][startCol] }; // Crea una copia del pezzo
+    
+    if (!piece.hasPiece) {
+      console.error("Errore: nessun pezzo trovato alla posizione iniziale dell'animazione!");
+      this.isAnimatingCapture = false;
+      onComplete();
+      return;
+    }
+    
+    // Intervallo per l'animazione (sposta il pezzo ogni 500ms)
+    this.captureAnimationInterval = setInterval(() => {
+      if (this.captureAnimationStep < this.captureAnimationPath.length - 1) {
+        // Posizione corrente
+        const current = this.captureAnimationPath[this.captureAnimationStep];
+        // Prossima posizione
+        const next = this.captureAnimationPath[this.captureAnimationStep + 1];
+        
+        // Calcola la posizione del pezzo catturato
+        const capturedRow = (current.row + next.row) / 2;
+        const capturedCol = (current.col + next.col) / 2;
+        
+        // Rimuove il pezzo dalla posizione corrente
+        this.board[current.row][current.col] = { 
+          hasPiece: false, 
+          pieceColor: null, 
+          isKing: false 
+        };
+        
+        // Rimuove il pezzo catturato
+        this.board[capturedRow][capturedCol] = { 
+          hasPiece: false, 
+          pieceColor: null, 
+          isKing: false 
+        };
+        
+        // Verifica se la pedina diventa dama
+        let becameKing = false;
+        if (!piece.isKing) {
+          if ((piece.pieceColor === 'white' && next.row === 0) || 
+              (piece.pieceColor === 'black' && next.row === 7)) {
+            // La pedina diventa dama
+            piece.isKing = true;
+            becameKing = true;
+            
+            // Riproduci suono promozione a dama
+            this.audioService.playKingSound();
+            
+            console.log(`Pedina ${piece.pieceColor} promossa a dama durante l'animazione`);
+          }
+        }
+        
+        // Sposta il pezzo nella nuova posizione
+        this.board[next.row][next.col] = {
+          hasPiece: true,
+          pieceColor: piece.pieceColor,
+          isKing: piece.isKing
+        };
+        
+        // MIGLIORAMENTO: Forza un aggiornamento dell'interfaccia immediatamente
+        // se la pedina è diventata dama, così da mostrare la corona
+        if (becameKing) {
+          // Creiamo una copia della scacchiera per forzare Angular a rilevare la modifica
+          this.board = [...this.board.map(row => [...row])];
+          
+          // In alternativa, possiamo usare il change detector di Angular
+          // ma questo richiede l'injection di ChangeDetectorRef nel costruttore
+          // this.changeDetector.detectChanges();
+        }
+        
+        // Riproduci il suono di cattura
+        this.audioService.playCaptureSound();
+        
+        // Avanza all'animazione successiva
+        this.captureAnimationStep++;
+      } else {
+        // Fine dell'animazione
+        clearInterval(this.captureAnimationInterval);
+        this.captureAnimationInterval = null;
+        this.isAnimatingCapture = false;
+        
+        // Callback per completare l'aggiornamento
+        onComplete();
+      }
+    }, 500); // Ritardo di 500ms tra ogni passo dell'animazione
+  }
+
 
   protected readonly localStorage = localStorage;
 }
