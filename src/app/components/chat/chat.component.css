@@ -8,10 +8,11 @@
 }
 
 .chat-messages {
-  height: 200px; /* Imposta l'altezza desiderata */
+  flex: 1;
   overflow-y: auto;
-  display: flex;
-  flex-direction: column-reverse; /* Fa scorrere i nuovi messaggi in fondo */
+  padding: 10px;
+  margin-bottom: 10px;
+  min-height: 200px;
 }
 
 .chat-input {

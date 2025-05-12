@@ -27,7 +27,7 @@
 }
 
 .navbar-brand h3::before {
-  content: "☭";
+  content: "⛁";
   margin-right: 0.5rem;
   font-size: 2rem;
   color: #d18b47;
@@ -137,11 +137,11 @@
   .navbar-brand h3 {
     font-size: 1.5rem;
   }
-  
+
   .navbar-nav .nav-link {
     padding: 0.5rem 1rem;
   }
-  
+
   .navbar-nav .language-selector {
     margin-left: 0;
     border-left: none;
