@@ -1,7 +1,7 @@
 {
   "COMMON": {
-    "PLAY": "Gioca",
-    "RULES": "Regole",
+    "PLAY": "🎮 Gioca",
+    "RULES": "📖 Regole",
     "LOGIN": "Accedi",
     "WELCOME": "Benvenuto",
     "COPY": "Copia",
@@ -49,7 +49,8 @@
     "MIN_LENGTH": "Minimo 3 caratteri",
     "NEXT": "Avanti",
     "GAME_ID": "ID Partita",
-    "JOIN_AS": "Unisciti come"
+    "JOIN_AS": "Unisciti come",
+    "WAITING_FOR_OPPONENT": "La partita inizierà quando un altro giocatore si unirà."
   },
   "CHAT": {
     "PLACEHOLDER": "Scrivi un messaggio...",

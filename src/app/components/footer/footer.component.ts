@@ -16,23 +16,23 @@ export class FooterComponent {
   developers = [
     {
       name: 'Enzo Brancati',
-      linkedin: 'https://linkedin.com/in/enzo-brancati',
-      email: 'enzo.brancati@example.com'
+      linkedin: 'https://www.linkedin.com/in/enzo-brancati-a2880520b/',
+      email: 'enzo.brancati04@gmail.com'
     },
     {
       name: 'Daniele Filareti',
-      linkedin: 'https://linkedin.com/in/daniele-filareti',
-      email: 'daniele.filareti@example.com'
+      linkedin: 'https://www.linkedin.com/in/daniele-filareti-227a85257',
+      email: 'daniele.filareti@icloud.com'
     },
     {
       name: 'Domenico Farano',
-      linkedin: 'https://linkedin.com/in/domenico-farano',
-      email: 'domenico.farano@example.com'
+      linkedin: 'https://www.linkedin.com/in/domenico-farano-418923285',
+      email: 'dodo.farano@gmail.com'
     },
     {
       name: 'AnielloPio Pentangelo',
       linkedin: 'https://linkedin.com/in/aniello-pio-pentangelo',
-      email: 'aniellopio.pentangelo@example.com'
+      email: 'aniellopiopentangelo2@gmail.com'
     }
   ];
 }

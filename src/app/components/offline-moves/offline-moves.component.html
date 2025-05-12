@@ -1,11 +1,11 @@
 <div class="moves">
-  <h4>Mosse Recenti</h4>
+  <h4>{{ 'GAME.RECENT_MOVES' | translate }}</h4>
   <table class="moves-table">
     <thead>
       <tr>
         <th>#</th>
-        <th>Bianco</th>
-        <th>Nero</th>
+        <th>{{ 'GAME_OVER.WHITE' | translate }}</th>
+        <th>{{ 'GAME_OVER.BLACK' | translate }}</th>
       </tr>
     </thead>
     <tbody>
@@ -16,7 +16,7 @@
           <td class="move-cell">{{ turn.white.length > 0 ? turn.white[0].notation : '' }}</td>
           <td class="move-cell">{{ turn.black.length > 0 ? turn.black[0].notation : '' }}</td>
         </tr>
-        
+
         <!-- Righe aggiuntive per catture multiple (bianco) -->
         <ng-container *ngIf="turn.white.length > 1">
           <tr *ngFor="let move of turn.white | slice:1">
@@ -24,7 +24,7 @@
             <td *ngIf="turn.black.length <= 1"></td>
           </tr>
         </ng-container>
-        
+
         <!-- Righe aggiuntive per catture multiple (nero) -->
         <ng-container *ngIf="turn.black.length > 1">
           <tr *ngFor="let move of turn.black | slice:1">

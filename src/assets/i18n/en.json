@@ -1,7 +1,7 @@
 {
   "COMMON": {
-    "PLAY": "Play",
-    "RULES": "Rules",
+    "PLAY": "🎮 Play",
+    "RULES": "📖 Rules",
     "LOGIN": "Login",
     "WELCOME": "Welcome",
     "COPY": "Copy",
@@ -49,7 +49,8 @@
     "MIN_LENGTH": "Minimum 3 characters",
     "NEXT": "Next",
     "GAME_ID": "Game ID",
-    "JOIN_AS": "Join as"
+    "JOIN_AS": "Join as",
+    "WAITING_FOR_OPPONENT": "The game will start when another player joins."
   },
   "CHAT": {
     "PLACEHOLDER": "Write a message...",

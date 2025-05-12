@@ -4,9 +4,9 @@
     <div *ngIf="showGameOverModal" class="game-over-modal">
       <div class="modal-content">
         <div class="close-button" (click)="hideGameOverModal()">✕</div>
-        <h2>Partita Terminata!</h2>
-        <p>Ha vinto il giocatore <span class="winner-text">{{ winner === 'white' ? 'Bianco' : 'Nero' }}</span></p>
-        <button class="new-game-button" (click)="resetGame()">{{ 'JOIN.NEW_GAME' | translate }}</button>
+        <h2>{{ 'GAME_OVER.TITLE' | translate }}</h2>
+        <p>{{ 'GAME_OVER.WINNER' | translate }} <span class="winner-text">{{ winner === 'white' ? ('GAME_OVER.WHITE' | translate) : ('GAME_OVER.BLACK' | translate) }}</span></p>
+        <button class="new-game-button" (click)="resetGame()">{{ 'GAME_OVER.NEW_GAME' | translate }}</button>
       </div>
     </div>
 
@@ -51,9 +51,9 @@
   <div class="side-panel">
     <div class="status-info">
       <div class="current-player">
-        Turno: {{ currentPlayer === 'white' ? 'Bianco' : 'Nero' }} <br>
-        Bianchi rimanenti: {{whiteCount}} <br>
-        Neri rimanenti: {{blackCount}}
+        {{ 'GAME.TURN' | translate }}: {{ currentPlayer === 'white' ? ('GAME_OVER.WHITE' | translate) : ('GAME_OVER.BLACK' | translate) }} <br>
+        {{ 'GAME_OVER.WHITE' | translate }} {{ 'GAME.PIECES' | translate }}: {{whiteCount}} <br>
+        {{ 'GAME_OVER.BLACK' | translate }} {{ 'GAME.PIECES' | translate }}: {{blackCount}}
       </div>
     </div>
     <app-offline-moves [moves]="moves"></app-offline-moves>
