@@ -13,6 +13,9 @@
   --dropdown-active-bg: #444;
   --link-color: #0d6efd;
   --link-hover-color: #0a58ca;
+  --alert-success-bg: #d4edda;
+  --alert-success-text: #155724;
+  --alert-success-border: #c3e6cb;
 
   /* Board Colors - Light Theme */
   --board-light: #f0d9b5;
@@ -67,6 +70,9 @@
   --button-secondary-text: #fff;
   --card-bg: #fff;
   --card-border: rgba(0, 0, 0, 0.125);
+  --card-text: #212529;
+  --card-header-bg: #f8f9fa;
+  --card-header-text: #212529;
   --input-bg: #fff;
   --input-border: #ced4da;
   --input-text: #212529;
@@ -87,16 +93,19 @@
   --dropdown-hover-bg: #333;
   --dropdown-hover-text: #fff;
   --dropdown-active-bg: #444;
-  --link-color: #6ea8fe;
-  --link-hover-color: #9ec5fe;
+  --link-color: #64b5f6;
+  --link-hover-color: #90caf9;
+  --alert-success-bg: #1e3a2f;
+  --alert-success-text: #4caf50;
+  --alert-success-border: #2e7d32;
 
   /* Board Colors - Dark Theme */
-  --board-light: #3c3f41;
-  --board-dark: #2b2b2b;
-  --board-border: #1a1a1a;
-  --board-highlight: rgba(255, 215, 0, 0.5);
-  --board-selected: rgba(255, 165, 0, 0.6);
-  --board-shadow: rgba(0, 0, 0, 0.5);
+  --board-light: #6b6b6b;
+  --board-dark: #4a4a4a;
+  --board-border: #2a2a2a;
+  --board-highlight: rgba(255, 215, 0, 0.7);
+  --board-selected: rgba(255, 165, 0, 0.7);
+  --board-shadow: rgba(0, 0, 0, 0.4);
 
   /* Piece Colors - Dark Theme */
   --piece-white: #e0e0e0;
@@ -109,23 +118,23 @@
   --piece-crown-shadow: rgba(0, 0, 0, 0.5);
 
   /* Player Info - Dark Theme */
-  --player-white-bg: rgba(255, 255, 255, 0.1);
-  --player-black-bg: rgba(0, 0, 0, 0.3);
-  --player-white-border: #444;
-  --player-black-border: #222;
-  --player-text-color: #e0e0e0;
-  --player-secondary-text: #aaaaaa;
+  --player-white-bg: rgba(255, 255, 255, 0.15);
+  --player-black-bg: rgba(0, 0, 0, 0.4);
+  --player-white-border: #555;
+  --player-black-border: #333;
+  --player-text-color: #ffffff;
+  --player-secondary-text: #d0d0d0;
 
   /* Turn Status - Dark Theme */
-  --turn-active-bg: #1e3a2f;
-  --turn-active-border: #28a745;
-  --turn-active-icon: #28a745;
-  --turn-waiting-bg: #332d1a;
-  --turn-waiting-border: #ffc107;
-  --turn-waiting-icon: #ffc107;
-  --turn-loading-bg: #1a3a42;
-  --turn-loading-border: #17a2b8;
-  --turn-loading-icon: #17a2b8;
+  --turn-active-bg: #2a4a3f;
+  --turn-active-border: #3cb371;
+  --turn-active-icon: #4caf50;
+  --turn-waiting-bg: #4a4020;
+  --turn-waiting-border: #ffd54f;
+  --turn-waiting-icon: #ffd54f;
+  --turn-loading-bg: #2a4a52;
+  --turn-loading-border: #4dd0e1;
+  --turn-loading-icon: #4dd0e1;
 
   /* Game Over Modal - Dark Theme */
   --modal-bg: #2d2d2d;
@@ -137,17 +146,20 @@
   --modal-button-text: #fff;
 
   /* UI Elements */
-  --button-primary-bg: #0d6efd;
-  --button-primary-text: #fff;
-  --button-secondary-bg: #6c757d;
-  --button-secondary-text: #fff;
-  --card-bg: #1e1e1e;
-  --card-border: rgba(255, 255, 255, 0.125);
-  --input-bg: #2d2d2d;
-  --input-border: #444;
-  --input-text: #e0e0e0;
+  --button-primary-bg: #2196f3;
+  --button-primary-text: #ffffff;
+  --button-secondary-bg: #757575;
+  --button-secondary-text: #ffffff;
+  --card-bg: #2d2d2d;
+  --card-border: rgba(255, 255, 255, 0.2);
+  --card-text: #e0e0e0;
+  --card-header-bg: #3d3d3d;
+  --card-header-text: #ffffff;
+  --input-bg: #3d3d3d;
+  --input-border: #555;
+  --input-text: #ffffff;
   --footer-bg: #1a1a1a;
-  --footer-text: #a0a0a0;
+  --footer-text: #bbbbbb;
 }
 
 /* Apply theme variables to elements */
@@ -187,6 +199,20 @@ body {
 .card {
   background-color: var(--card-bg);
   border-color: var(--card-border);
+  color: var(--card-text);
+}
+
+.card-header {
+  background-color: var(--card-header-bg);
+  color: var(--card-header-text);
+}
+
+.card-body {
+  color: var(--card-text);
+}
+
+.card-text {
+  color: var(--card-text);
 }
 
 .form-control {
@@ -216,4 +242,10 @@ a:hover {
 footer {
   background-color: var(--footer-bg);
   color: var(--footer-text);
+}
+
+.alert-success {
+  background-color: var(--alert-success-bg);
+  color: var(--alert-success-text);
+  border-color: var(--alert-success-border);
 }

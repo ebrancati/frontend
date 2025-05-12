@@ -5,34 +5,53 @@ import { BehaviorSubject, Observable } from 'rxjs';
   providedIn: 'root'
 })
 export class ThemeService {
-  private currentThemeSubject = new BehaviorSubject<string>('light');
-  public currentTheme$: Observable<string> = this.currentThemeSubject.asObservable();
+  private readonly THEME_KEY = 'theme';
+  private themeSubject = new BehaviorSubject<string>(this.getInitialTheme());
+  public theme$: Observable<string> = this.themeSubject.asObservable();
 
   constructor() {
-    // Try to load the saved theme from localStorage
-    const savedTheme = localStorage.getItem('preferredTheme');
-    if (savedTheme && (savedTheme === 'light' || savedTheme === 'dark')) {
-      this.changeTheme(savedTheme);
-    } else {
-      // Default to light theme
-      this.changeTheme('light');
+    this.applyTheme(this.themeSubject.value);
+  }
+
+  private getInitialTheme(): string {
+    // Check if theme is stored in localStorage
+    const savedTheme = localStorage.getItem(this.THEME_KEY);
+    if (savedTheme && (savedTheme === 'light-theme' || savedTheme === 'dark-theme')) {
+      return savedTheme;
     }
-  }
 
-  public changeTheme(theme: string): void {
-    document.body.classList.remove('light-theme', 'dark-theme');
-    document.body.classList.add(`${theme}-theme`);
-    localStorage.setItem('preferredTheme', theme);
-    this.currentThemeSubject.next(theme);
-  }
-
-  public getCurrentTheme(): string {
-    return this.currentThemeSubject.value;
+    // If no saved theme, use light theme as default
+    return 'light-theme';
   }
 
   public toggleTheme(): void {
-    const currentTheme = this.getCurrentTheme();
-    const newTheme = currentTheme === 'light' ? 'dark' : 'light';
-    this.changeTheme(newTheme);
+    const currentTheme = this.themeSubject.value;
+    const newTheme = currentTheme === 'light-theme' ? 'dark-theme' : 'light-theme';
+    this.setTheme(newTheme);
+  }
+
+  public setTheme(theme: string): void {
+    if (theme !== 'light-theme' && theme !== 'dark-theme') {
+      return;
+    }
+
+    localStorage.setItem(this.THEME_KEY, theme);
+    this.themeSubject.next(theme);
+    this.applyTheme(theme);
+  }
+
+  public getCurrentTheme(): string {
+    return this.themeSubject.value;
+  }
+
+  private applyTheme(theme: string): void {
+    // Remove any existing theme classes
+    document.body.classList.remove('light-theme', 'dark-theme');
+    // Add the new theme class
+    document.body.classList.add(theme);
+  }
+
+  public isDarkTheme(): boolean {
+    return this.themeSubject.value === 'dark-theme';
   }
 }

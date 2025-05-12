@@ -2,9 +2,10 @@
   display: flex;
   flex-direction: column;
   height: 100%;
-  background-color: #fafafa;
-  border: 1px solid #ccc;
+  background-color: var(--card-bg);
+  border: 1px solid var(--card-border);
   border-radius: 5px;
+  color: var(--text-color);
 }
 
 .chat-messages {
@@ -13,11 +14,12 @@
   padding: 10px;
   margin-bottom: 10px;
   min-height: 200px;
+  color: var(--text-color);
 }
 
 .chat-input {
   display: flex;
-  border-top: 1px solid #ddd;
+  border-top: 1px solid var(--input-border);
   padding: 10px;
 }
 
@@ -27,12 +29,14 @@
   border: none;
   outline: none;
   background-color: transparent;
+  color: var(--input-text);
 }
 
 .chat-input button {
   padding: 8px 12px;
   border: none;
   background-color: transparent;
+  color: var(--button-primary-bg);
   cursor: pointer;
 }
 

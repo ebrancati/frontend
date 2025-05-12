@@ -80,8 +80,24 @@
   filter: invert(1);
 }
 
-.navbar-nav .language-selector {
+.navbar-nav .theme-toggle {
   margin-left: 1rem;
+  padding-right: 1rem;
+}
+
+.navbar-nav .theme-toggle .nav-link {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.navbar-nav .theme-toggle .bi {
+  font-size: 1.2rem;
+}
+
+.navbar-nav .language-selector {
+  margin-left: 0.5rem;
   border-left: 1px solid rgba(255, 255, 255, 0.2);
   padding-left: 1rem;
 }

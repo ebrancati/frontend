@@ -3,6 +3,7 @@ import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { TranslateModule } from '@ngx-translate/core';
 import { LanguageService } from '../../../services/language.service';
+import { ThemeService } from '../../../services/theme.service';
 import { Subscription } from 'rxjs';
 
 @Component({
@@ -16,14 +17,25 @@ export class NavbarComponent implements OnInit, OnDestroy {
   nickname = localStorage.getItem('nickname') ?? '';
   isAdmin: boolean = false;
   currentLang: string = 'it';
+  currentTheme: string = 'light-theme';
+  isDarkTheme: boolean = false;
   private langSubscription: Subscription;
+  private themeSubscription: Subscription;
 
   constructor(
     private router: Router,
-    private languageService: LanguageService
+    private languageService: LanguageService,
+    private themeService: ThemeService
   ) {
     this.langSubscription = this.languageService.currentLang$.subscribe(
       lang => this.currentLang = lang
+    );
+
+    this.themeSubscription = this.themeService.theme$.subscribe(
+      theme => {
+        this.currentTheme = theme;
+        this.isDarkTheme = theme === 'dark-theme';
+      }
     );
   }
 
@@ -38,6 +50,9 @@ export class NavbarComponent implements OnInit, OnDestroy {
     if (this.langSubscription) {
       this.langSubscription.unsubscribe();
     }
+    if (this.themeSubscription) {
+      this.themeSubscription.unsubscribe();
+    }
   }
 
   logout(): void {
@@ -47,5 +62,9 @@ export class NavbarComponent implements OnInit, OnDestroy {
 
   changeLanguage(lang: string): void {
     this.languageService.changeLanguage(lang);
+  }
+
+  toggleTheme(): void {
+    this.themeService.toggleTheme();
   }
 }

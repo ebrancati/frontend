@@ -34,7 +34,7 @@
   display: grid;
   grid-template-columns: repeat(8, 60px);
   grid-template-rows: repeat(8, 60px);
-  border: 2px solid #333;
+  border: 2px solid var(--board-border);
 }
 
 .row {
@@ -47,8 +47,8 @@
   position: relative;
 }
 
-.light { background: #f0d9b5; }
-.dark  { background: #b58863; }
+.light { background: var(--board-light); }
+.dark  { background: var(--board-dark); }
 
 .piece {
   width: 80%;
@@ -61,10 +61,20 @@
   display: flex;
   justify-content: center;
   align-items: center;
+  box-shadow: 0 3px 5px var(--board-shadow);
 }
 
-.black { background: black; }
-.white { background: white; border: 2px solid #ccc; }
+.black {
+  background: var(--piece-black);
+  border: 1px solid var(--piece-black-border);
+  box-shadow: 0 3px 5px var(--piece-black-shadow);
+}
+
+.white {
+  background: var(--piece-white);
+  border: 1px solid var(--piece-white-border);
+  box-shadow: 0 3px 5px var(--piece-white-shadow);
+}
 
 .selected {
   position: relative;
@@ -77,7 +87,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  border: 3px solid yellow;
+  border: 3px solid var(--board-selected);
   pointer-events: none;
 }
 
@@ -87,16 +97,16 @@
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  color: gold;
+  color: var(--piece-crown-color);
   margin-top: -2px;
 }
 
 .black .crown {
-  text-shadow: 0 0 2px white;
+  text-shadow: 0 0 2px var(--piece-white);
 }
 
 .white .crown {
-  text-shadow: 0 0 2px black;
+  text-shadow: 0 0 2px var(--piece-black);
 }
 
 .square.highlight::after {
@@ -105,7 +115,7 @@
   top: 50%; left: 50%;
   transform: translate(-50%, -50%);
   width: 14px; height: 14px;
-  background: yellow;
+  background: var(--board-highlight);
   border-radius: 50%;
 }
 
@@ -123,7 +133,7 @@
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0, 0, 0, 0.7);
+  background-color: var(--modal-shadow);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -131,13 +141,14 @@
 }
 
 .modal-content {
-  background-color: white;
+  background-color: var(--modal-bg);
+  color: var(--modal-text);
   padding: 30px;
   border-radius: 10px;
   text-align: center;
   position: relative;
   width: 300px;
-  box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 0 20px var(--modal-shadow);
 }
 
 .close-button {
@@ -146,15 +157,16 @@
   right: 15px;
   font-size: 20px;
   cursor: pointer;
-  color: #777;
+  color: var(--modal-text);
+  opacity: 0.7;
 }
 
 .close-button:hover {
-  color: #333;
+  opacity: 1;
 }
 
 h2 {
-  color: #333;
+  color: var(--modal-text);
   margin-top: 0;
   font-size: 24px;
 }
@@ -162,14 +174,14 @@ h2 {
 .winner-text {
   font-weight: bold;
   font-size: 20px;
-  color: #d4af37; /* Colore oro per il vincitore */
+  color: var(--modal-winner-text);
 }
 
 .new-game-button {
   margin-top: 20px;
   padding: 10px 20px;
-  background-color: #ff00ea;
-  color: white;
+  background-color: var(--modal-button-bg);
+  color: var(--modal-button-text);
   border: none;
   border-radius: 5px;
   cursor: pointer;
@@ -178,7 +190,7 @@ h2 {
 }
 
 .new-game-button:hover {
-  background-color: #45a049;
+  background-color: var(--modal-button-hover);
 }
 
 .column-labels {
@@ -192,7 +204,7 @@ h2 {
   width: 60px;
   text-align: center;
   font-weight: bold;
-  color: #666;
+  color: var(--player-secondary-text);
 }
 
 .board-with-row-labels {
@@ -213,7 +225,7 @@ h2 {
   align-items: center;
   justify-content: center;
   font-weight: bold;
-  color: #666;
+  color: var(--player-secondary-text);
   width: 20px;
 }
 
@@ -236,14 +248,14 @@ h2 {
 
 /* Stili specifici per i giocatori */
 .black-player {
-  background-color: rgba(0, 0, 0, 0.1);
-  border-left: 4px solid #333;
+  background-color: var(--player-black-bg);
+  border-left: 4px solid var(--player-black-border);
 }
 
 .white-player {
-  background-color: rgba(255, 255, 255, 0.8);
-  border: 1px solid #ddd;
-  border-left: 4px solid #ddd;
+  background-color: var(--player-white-bg);
+  border: 1px solid var(--player-white-border);
+  border-left: 4px solid var(--player-white-border);
 }
 
 /* Icona pedina (decorativa) */
@@ -256,18 +268,19 @@ h2 {
 }
 
 .player-piece.black {
-  background-color: #000;
-  border: 1px solid #444;
+  background-color: var(--piece-black);
+  border: 1px solid var(--piece-black-border);
 }
 
 .player-piece.white {
-  background-color: #fff;
-  border: 1px solid #ccc;
+  background-color: var(--piece-white);
+  border: 1px solid var(--piece-white-border);
 }
 
 /* Contenuto testuale */
 .player-text {
   flex-grow: 1;
+  color: var(--player-text-color);
 }
 
 .player-info h3 {
@@ -275,11 +288,12 @@ h2 {
   font-size: 1.1rem;
   font-weight: 600;
   line-height: 1.2;
+  color: var(--player-text-color);
 }
 
 .piece-count {
   font-size: 0.9rem;
-  color: #666;
+  color: var(--player-secondary-text);
   margin-top: 2px;
 }
 
@@ -299,13 +313,13 @@ h2 {
 }
 
 .status-active {
-  background-color: #d4edda;
-  color: #155724;
+  background-color: var(--turn-active-bg);
+  color: var(--turn-active-icon);
 }
 
 .status-waiting {
-  background-color: #fff3cd;
-  color: #856404;
+  background-color: var(--turn-waiting-bg);
+  color: var(--turn-waiting-icon);
 }
 
 /* Stile per il turno di gioco */
@@ -324,18 +338,18 @@ h2 {
 }
 
 .turn-active {
-  background-color: #d1e7dd;
-  border-left: 4px solid #198754;
+  background-color: var(--turn-active-bg);
+  border-left: 4px solid var(--turn-active-border);
 }
 
 .turn-waiting {
-  background-color: #fff3cd;
-  border-left: 4px solid #ffc107;
+  background-color: var(--turn-waiting-bg);
+  border-left: 4px solid var(--turn-waiting-border);
 }
 
 .turn-loading {
-  background-color: #cff4fc;
-  border-left: 4px solid #0dcaf0;
+  background-color: var(--turn-loading-bg);
+  border-left: 4px solid var(--turn-loading-border);
 }
 
 .turn-icon {
@@ -346,15 +360,15 @@ h2 {
 }
 
 .turn-active .turn-icon {
-  color: #198754;
+  color: var(--turn-active-icon);
 }
 
 .turn-waiting .turn-icon {
-  color: #856404;
+  color: var(--turn-waiting-icon);
 }
 
 .turn-loading .turn-icon {
-  color: #055160;
+  color: var(--turn-loading-icon);
   animation: spin 2s linear infinite;
 }
 
@@ -377,7 +391,7 @@ h2 {
 .turn-text p {
   margin: 3px 0 0 0;
   font-size: 0.9rem;
-  color: #555;
+  color: var(--player-secondary-text);
 }
 
 /* RESPONSIVE STYLES */
