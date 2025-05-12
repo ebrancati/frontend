@@ -6,6 +6,20 @@
   border: 1px solid var(--card-border);
   border-radius: 5px;
   color: var(--text-color);
+  margin-top: 20px;
+}
+
+.chat-header {
+  padding: 10px;
+  border-bottom: 1px solid var(--card-border);
+  background-color: var(--card-header-bg);
+}
+
+.chat-header h5 {
+  margin: 0;
+  font-size: 16px;
+  color: var(--card-header-text);
+  font-weight: 600;
 }
 
 .chat-messages {
@@ -15,6 +29,16 @@
   margin-bottom: 10px;
   min-height: 200px;
   color: var(--text-color);
+  line-height: 1.5;
+}
+
+.chat-messages div {
+  margin-bottom: 8px;
+  word-wrap: break-word;
+}
+
+.chat-messages strong {
+  color: var(--link-color);
 }
 
 .chat-input {
@@ -30,6 +54,15 @@
   outline: none;
   background-color: transparent;
   color: var(--input-text);
+  border-radius: 4px;
+}
+
+.chat-input input:focus {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.dark-theme .chat-input input:focus {
+  background-color: rgba(255, 255, 255, 0.1);
 }
 
 .chat-input button {
@@ -38,6 +71,11 @@
   background-color: transparent;
   color: var(--button-primary-bg);
   cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.chat-input button:hover {
+  transform: scale(1.1);
 }
 
 @media (max-width: 768px) {

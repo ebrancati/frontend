@@ -427,4 +427,5 @@ export class OfflineBoardComponent {
   resetGame(): void {
     this.initBoard();
   }
+
 }

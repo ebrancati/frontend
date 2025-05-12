@@ -56,7 +56,9 @@
     "CHAT_TITLE": "Chat:"
   },
   "FOOTER": {
-    "COPYRIGHT": "© {{year}} OnlineCheckers.org"
+    "COPYRIGHT": "© {{year}} OnlineCheckers.org",
+    "OUR_TEAM": "Il Nostro Team",
+    "TAGLINE": "Gioca a dama online con amici o contro il computer."
   },
   "RULES": {
     "TITLE": "Dama Italiana - Regole e Come Giocare",

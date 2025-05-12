@@ -60,11 +60,27 @@
 }
 
 .dark-theme tbody tr:nth-child(even) {
-  background-color: rgba(255, 255, 255, 0.05);
+  background-color: rgba(255, 255, 255, 0.1);
 }
 
 .dark-theme tbody tr:hover {
-  background-color: rgba(255, 255, 255, 0.1);
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+.dark-theme .moves-table td {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.dark-theme .move-cell {
+  color: #e0e0e0;
+}
+
+.dark-theme .turn-number {
+  color: #b0b0b0;
+}
+
+.dark-theme .move-continuation {
+  color: #a0a0a0;
 }
 
 /* RESPONSIVE STYLES */
