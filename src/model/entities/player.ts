@@ -1,4 +1,4 @@
-export interface player
-{
-  nickname:string;
+export interface player {
+  nickname: string;
+  preferredTeam?: string;
 }

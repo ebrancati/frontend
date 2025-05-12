@@ -2,6 +2,7 @@ import { Component } from '@angular/core';
 import { NgClass, NgForOf, NgIf } from '@angular/common';
 import { OfflineMovesComponent as MovesComponent } from '../offline-moves/offline-moves.component';
 import { AudioService } from '../../../services/audio.service';
+import { TranslateModule } from '@ngx-translate/core';
 
 /**
  * Interface representing a cell on the checkers board
@@ -28,6 +29,7 @@ interface Move {
     NgClass,
     NgIf,
     MovesComponent,
+    TranslateModule
   ],
   templateUrl: './offline-board.component.html',
   styleUrl: './offline-board.component.css',

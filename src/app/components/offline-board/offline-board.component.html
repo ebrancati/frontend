@@ -6,7 +6,7 @@
         <div class="close-button" (click)="hideGameOverModal()">✕</div>
         <h2>Partita Terminata!</h2>
         <p>Ha vinto il giocatore <span class="winner-text">{{ winner === 'white' ? 'Bianco' : 'Nero' }}</span></p>
-        <button class="new-game-button" (click)="resetGame()">Nuova Partita</button>
+        <button class="new-game-button" (click)="resetGame()">{{ 'JOIN.NEW_GAME' | translate }}</button>
       </div>
     </div>
 

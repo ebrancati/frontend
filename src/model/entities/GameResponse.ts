@@ -17,4 +17,5 @@ export interface GameResponse {
   vincitore: 'WHITE' | 'BLACK' | 'NONE';
   players: PlayerDto[];
   cronologiaMosse: string[];
+  lastMultiCapturePath?: string[];
 }

@@ -1,5 +1,6 @@
 import { Component, Input, OnChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { TranslateModule } from '@ngx-translate/core';
 
 interface Move {
   from: { row: number, col: number };
@@ -22,7 +23,7 @@ interface TurnMoves {
   selector: 'app-offline-moves',
   standalone: true,
   imports: [
-    CommonModule
+    CommonModule, TranslateModule
   ],
   templateUrl: './offline-moves.component.html',
   styleUrl: './offline-moves.component.css',
@@ -150,7 +151,7 @@ export class OfflineMovesComponent implements OnChanges {
    * Converte le coordinate della scacchiera in notazione algebrica
    */
   private toAlgebraic(row: number, col: number): string {
-    const columns = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
+    const columns = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
     const rows = ['8', '7', '6', '5', '4', '3', '2', '1'];
     return columns[col] + rows[row];
   }

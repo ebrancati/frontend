@@ -1,12 +1,13 @@
   import {Component, ElementRef, Input, OnInit, ViewChild} from '@angular/core';
   import { FormsModule } from '@angular/forms';
   import { CommonModule } from '@angular/common';
-  import {GameService} from '../../../services/game.service';
+  import { GameService } from '../../../services/game.service';
+  import { TranslateModule } from '@ngx-translate/core';
 
   @Component({
     selector: 'app-chat',
     standalone: true,
-    imports: [CommonModule, FormsModule],
+    imports: [CommonModule, FormsModule, TranslateModule],
     templateUrl: './chat.component.html',
     styleUrl: './chat.component.css'
   })

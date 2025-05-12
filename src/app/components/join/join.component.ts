@@ -6,11 +6,12 @@ import {PlayerService} from '../../../services/player.service';
 import {GameService} from '../../../services/game.service';
 import {player} from '../../../model/entities/player';
 import {switchMap} from 'rxjs';
+import { TranslateModule } from '@ngx-translate/core';
 
 @Component({
   selector: 'app-join',
   standalone: true,
-  imports: [ FormsModule, NgIf ],
+  imports: [ FormsModule, NgIf, TranslateModule ],
   templateUrl: './join.component.html'
 })
 export class JoinComponent implements OnInit {
