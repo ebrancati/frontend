@@ -47,8 +47,13 @@
   position: relative;
 }
 
+/* Classi originali per compatibilità */
 .light { background: #f0d9b5; }
 .dark  { background: #b58863; }
+
+/* Nuove classi usate dal metodo getCellClass */
+.white-cell { background: #f0d9b5; }
+.black-cell { background: #b58863; }
 
 .piece {
   width: 80%;
@@ -61,10 +66,17 @@
   display: flex;
   justify-content: center;
   align-items: center;
+  box-shadow: 0 3px 5px rgba(0, 0, 0, 0.3);
 }
 
-.black { background: black; }
-.white { background: white; border: 2px solid #ccc; }
+.black {
+  background: #222;
+}
+
+.white {
+  background: #fff;
+  border: 1px solid #ccc;
+}
 
 .selected {
   position: relative;
@@ -375,6 +387,62 @@ h2 {
   color: #555;
 }
 
+.capture-multiple {
+  background-color: #f8d7da;
+  border-left: 4px solid #dc3545;
+}
+
+.capture-multiple .turn-icon {
+  color: #dc3545;
+}
+
+/* Stili per le mosse evidenziate */
+.highlighted-cell::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 14px;
+  height: 14px;
+  background: rgba(255, 255, 0, 0.7);
+  border-radius: 50%;
+  z-index: 1;
+}
+
+/* Stile per la cella selezionata */
+.selected-cell {
+  position: relative;
+}
+
+.selected-cell::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border: 3px solid yellow;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Rotate board for player black */
+.board-container[data-player-team="BLACK"] .board-with-coordinates {
+  transform: rotate(180deg);
+}
+
+.board-container[data-player-team="BLACK"] .piece,
+.board-container[data-player-team="BLACK"] .col-label,
+.board-container[data-player-team="BLACK"] .row-label {
+  transform: rotate(180deg);
+}
+
+.board-container[data-player-team="BLACK"] .board-container {
+  display: flex;
+  flex-direction: column;
+}
+
 @media (max-width: 992px) {
   .board {
     grid-template-columns: repeat(8, 45px);
@@ -576,21 +644,4 @@ h2 {
   .crown {
     font-size: 16px;
   }
-}
-
-/* Rotate board for player black */
-
-.board-container[data-player-team="BLACK"] .board-with-coordinates {
-  transform: rotate(180deg);
-}
-
-.board-container[data-player-team="BLACK"] .piece,
-.board-container[data-player-team="BLACK"] .col-label,
-.board-container[data-player-team="BLACK"] .row-label {
-  transform: rotate(180deg);
-}
-
-.board-container[data-player-team="BLACK"] .board-container {
-  display: flex;
-  flex-direction: column;
 }
