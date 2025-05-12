@@ -9,6 +9,12 @@
     "SHARE_GAME": "Share this game",
     "SHARE_LINK": "Share this link with your opponent:"
   },
+  "LOGIN": {
+    "YOUR_NICKNAME": "Your Nickname:",
+    "ENTER_NICKNAME": "Enter your nickname",
+    "CHOOSE_TEAM": "Choose your team",
+    "PLAY": "Play"
+  },
   "GAME": {
     "YOUR_TURN": "It's your turn!",
     "WAITING": "Waiting...",
