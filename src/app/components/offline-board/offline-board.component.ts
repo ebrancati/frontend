@@ -48,7 +48,7 @@ export class OfflineBoardComponent {
   whiteCount:number = 12;
   blackCount:number = 12;
 
-  columns: string[] = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
+  columns: string[] = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
   rows: string[] = ['8', '7', '6', '5', '4', '3', '2', '1'];
 
   ngOnInit() {

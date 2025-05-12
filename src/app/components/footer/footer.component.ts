@@ -31,7 +31,7 @@ export class FooterComponent {
     },
     {
       name: 'AnielloPio Pentangelo',
-      linkedin: 'https://linkedin.com/in/aniello-pio-pentangelo',
+      linkedin: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
       email: 'aniellopiopentangelo2@gmail.com'
     }
   ];
