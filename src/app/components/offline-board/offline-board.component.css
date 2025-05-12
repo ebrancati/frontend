@@ -35,6 +35,9 @@
   grid-template-columns: repeat(8, 60px);
   grid-template-rows: repeat(8, 60px);
   border: 2px solid var(--board-border);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+  overflow: hidden;
 }
 
 .row {
@@ -47,8 +50,14 @@
   position: relative;
 }
 
-.light { background: var(--board-light); }
-.dark  { background: var(--board-dark); }
+.light {
+  background: var(--board-light);
+  transition: background-color 0.3s ease;
+}
+.dark {
+  background: var(--board-dark);
+  transition: background-color 0.3s ease;
+}
 
 .piece {
   width: 80%;
@@ -61,7 +70,41 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  box-shadow: 0 3px 5px var(--board-shadow);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  cursor: grab;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  z-index: 10;
+}
+
+/* Animation for piece movement */
+@keyframes movePiece {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+
+.piece.moving {
+  animation: movePiece 0.5s ease-in-out;
+}
+
+/* Animation for piece capture */
+@keyframes capturePiece {
+  0% { transform: scale(1); opacity: 1; }
+  100% { transform: scale(0); opacity: 0; }
+}
+
+.piece.captured {
+  animation: capturePiece 0.4s ease-in-out forwards;
+}
+
+.piece:hover {
+  transform: scale(1.05);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
+}
+
+.piece:active {
+  cursor: grabbing;
+  transform: scale(1.1);
 }
 
 .black {
@@ -88,7 +131,15 @@
   right: 0;
   bottom: 0;
   border: 3px solid var(--board-selected);
+  box-shadow: inset 0 0 10px rgba(255, 255, 0, 0.5);
   pointer-events: none;
+  animation: pulse-border 1.5s infinite;
+}
+
+@keyframes pulse-border {
+  0% { border-color: var(--board-selected); }
+  50% { border-color: rgba(255, 215, 0, 0.8); }
+  100% { border-color: var(--board-selected); }
 }
 
 .crown {
@@ -101,22 +152,42 @@
   margin-top: -2px;
 }
 
+@keyframes crown-glow {
+  from { text-shadow: 0 0 4px gold, 0 0 8px rgba(255, 215, 0, 0.7); }
+  to { text-shadow: 0 0 8px gold, 0 0 15px rgba(255, 215, 0, 0.9); }
+}
+
 .black .crown {
-  text-shadow: 0 0 2px var(--piece-white);
+  text-shadow: 0 0 5px gold, 0 0 10px rgba(255, 215, 0, 0.7), 0 0 2px var(--piece-white);
+  animation: crown-glow 2s infinite alternate;
 }
 
 .white .crown {
-  text-shadow: 0 0 2px var(--piece-black);
+  text-shadow: 0 0 5px gold, 0 0 10px rgba(255, 215, 0, 0.7), 0 0 2px var(--piece-black);
+  animation: crown-glow 2s infinite alternate;
 }
 
-.square.highlight::after {
+.square.highlight::after, .square.droppable::after {
   content: '';
   position: absolute;
   top: 50%; left: 50%;
   transform: translate(-50%, -50%);
-  width: 14px; height: 14px;
-  background: var(--board-highlight);
+  width: 20px; height: 20px;
+  background: rgba(0, 255, 0, 0.3);
+  border: 2px solid rgba(0, 255, 0, 0.7);
   border-radius: 50%;
+  animation: pulse-highlight 2s infinite;
+  box-shadow: 0 0 8px rgba(0, 255, 0, 0.5);
+}
+
+.square.droppable.drag-over {
+  background-color: rgba(0, 255, 0, 0.2);
+}
+
+@keyframes pulse-highlight {
+  0% { transform: translate(-50%, -50%) scale(0.8); opacity: 0.7; }
+  50% { transform: translate(-50%, -50%) scale(1.2); opacity: 1; }
+  100% { transform: translate(-50%, -50%) scale(0.8); opacity: 0.7; }
 }
 
 .side-panel {

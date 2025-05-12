@@ -51,6 +51,10 @@ export class OfflineBoardComponent {
   columns: string[] = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
   rows: string[] = ['8', '7', '6', '5', '4', '3', '2', '1'];
 
+  // Drag and drop properties
+  draggedPiece: { row: number, col: number } | null = null;
+  dragOverCell: { row: number, col: number } | null = null;
+
   ngOnInit() {
     this.initBoard();
   }
@@ -282,14 +286,38 @@ export class OfflineBoardComponent {
     if (isCapture) {
         const captureRow = (fromRow + toRow) / 2;
         const captureCol = (fromCol + toCol) / 2;
-        this.board[captureRow][captureCol] = {
-            hasPiece: false,
-            pieceColor: null,
-            isKing: false
-        };
+
+        // Animate the capture
+        const capturedPieceElement = this.getPieceElement(captureRow, captureCol);
+        if (capturedPieceElement) {
+            capturedPieceElement.classList.add('captured');
+
+            // Wait for animation to complete before removing the piece
+            setTimeout(() => {
+                this.board[captureRow][captureCol] = {
+                    hasPiece: false,
+                    pieceColor: null,
+                    isKing: false
+                };
+            }, 400); // Match the animation duration
+        } else {
+            // Fallback if element not found
+            this.board[captureRow][captureCol] = {
+                hasPiece: false,
+                pieceColor: null,
+                isKing: false
+            };
+        }
+
         this.audioService.playCaptureSound();
     } else {
         this.audioService.playMoveSound();
+    }
+
+    // Animate the moving piece
+    const movingPieceElement = this.getPieceElement(fromRow, fromCol);
+    if (movingPieceElement) {
+        movingPieceElement.classList.add('moving');
     }
 
     // Sposta il pezzo
@@ -297,7 +325,6 @@ export class OfflineBoardComponent {
         hasPiece: true,
         pieceColor: movingPiece.pieceColor,
         isKing: willBecomeKing || movingPiece.isKing
-
     };
 
     this.board[fromRow][fromCol] = {
@@ -428,4 +455,109 @@ export class OfflineBoardComponent {
     this.initBoard();
   }
 
+  /**
+   * Helper method to get the DOM element for a piece at the specified position
+   * @param row - Row index of the piece
+   * @param col - Column index of the piece
+   * @returns The DOM element for the piece, or null if not found
+   */
+  private getPieceElement(row: number, col: number): HTMLElement | null {
+    // Find the square element at the specified position
+    const squares = document.querySelectorAll('.square');
+    const index = row * 8 + col;
+
+    if (index >= 0 && index < squares.length) {
+      // Find the piece element within the square
+      return squares[index].querySelector('.piece') as HTMLElement;
+    }
+
+    return null;
+  }
+
+  /**
+   * Handles the start of a drag operation
+   * @param event - The drag event
+   * @param row - Row index of the dragged piece
+   * @param col - Column index of the dragged piece
+   */
+  onDragStart(event: DragEvent, row: number, col: number): void {
+    if (this.gameOver) {
+      event.preventDefault();
+      return;
+    }
+
+    const cell = this.board[row][col];
+
+    // Only allow dragging the current player's pieces
+    if (!cell.hasPiece || cell.pieceColor !== this.currentPlayer) {
+      event.preventDefault();
+      return;
+    }
+
+    // Store the dragged piece position
+    this.draggedPiece = { row, col };
+
+    // Set the drag image (optional)
+    if (event.dataTransfer) {
+      event.dataTransfer.setData('text/plain', `${row},${col}`);
+      event.dataTransfer.effectAllowed = 'move';
+    }
+
+    // Select the piece and show valid moves
+    this.selectedCell = { row, col };
+    this.highlightedCells = this.getValidMoves(row, col);
+  }
+
+  /**
+   * Handles the end of a drag operation
+   * @param event - The drag event
+   */
+  onDragEnd(event: DragEvent): void {
+    // Reset drag state if no drop occurred
+    this.draggedPiece = null;
+    this.dragOverCell = null;
+  }
+
+  /**
+   * Handles dragging over a potential drop target
+   * @param event - The drag event
+   * @param row - Row index of the target cell
+   * @param col - Column index of the target cell
+   */
+  onDragOver(event: DragEvent, row: number, col: number): void {
+    // Prevent default to allow drop
+    if (this.isHighlight(row, col)) {
+      event.preventDefault();
+
+      // Add drag-over class for visual feedback
+      const element = event.currentTarget as HTMLElement;
+      element.classList.add('drag-over');
+
+      this.dragOverCell = { row, col };
+    }
+  }
+
+  /**
+   * Handles dropping a piece on a target cell
+   * @param event - The drag event
+   * @param row - Row index of the target cell
+   * @param col - Column index of the target cell
+   */
+  onDrop(event: DragEvent, row: number, col: number): void {
+    event.preventDefault();
+
+    // Remove drag-over class
+    const element = event.currentTarget as HTMLElement;
+    element.classList.remove('drag-over');
+
+    // Check if this is a valid drop target
+    if (this.draggedPiece && this.isHighlight(row, col)) {
+      // Make the move
+      this.makeMove(this.draggedPiece.row, this.draggedPiece.col, row, col);
+    }
+
+    // Reset drag state
+    this.draggedPiece = null;
+    this.dragOverCell = null;
+  }
 }

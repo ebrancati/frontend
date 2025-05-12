@@ -92,6 +92,10 @@ export class OnlineBoardComponent implements OnInit, OnDestroy {
   nickname: string | null = localStorage.getItem('nickname');
   capturePath: string[] = [];
 
+  // Drag and drop properties
+  draggedPiece: { row: number, col: number } | null = null;
+  dragOverCell: { row: number, col: number } | null = null;
+
   isAnimatingCapture: boolean = false;
   captureAnimationPath: { row: number, col: number }[] = [];
   captureAnimationStep: number = 0;
@@ -131,7 +135,7 @@ export class OnlineBoardComponent implements OnInit, OnDestroy {
     if (this.pollingSubscription) {
       this.pollingSubscription.unsubscribe();
     }
-    
+
     if (this.captureAnimationInterval) {
       clearInterval(this.captureAnimationInterval);
     }
@@ -155,16 +159,16 @@ export class OnlineBoardComponent implements OnInit, OnDestroy {
    */
   fetchGameState() {
     if (!this.gameID || this.isAnimatingCapture) return;
-    
+
     this.gameService.getGameState(this.gameID).subscribe({
       next: (response: GameResponse) => {
         console.log("Risposta dal server:", response);
         console.log("Players nella risposta:", response.players);
-        
+
         // Log del nickname attuale
         const nickname = localStorage.getItem('nickname');
         console.log('Nickname corrente in localStorage:', nickname);
-        
+
         if (nickname) {
           // Cerca il giocatore tra quelli nella partita
           const playerMatch = response.players.find(p => p.nickname === nickname);
@@ -188,10 +192,10 @@ export class OnlineBoardComponent implements OnInit, OnDestroy {
 
         // Salva lo stato attuale della scacchiera per confronto
         const oldBoard = JSON.parse(JSON.stringify(this.board));
-        
+
         // Aggiorna la chat
         this.chatHistory = response.chat ?? '';
-        
+
         // Aggiorna i nickname dei giocatori
         for (const player of response.players) {
           if (player.team === 'WHITE') {
@@ -200,23 +204,23 @@ export class OnlineBoardComponent implements OnInit, OnDestroy {
             this.blackPlayerNickname = player.nickname;
           }
         }
-        
+
         // SOLUZIONE al bug dell'animazione che si ripete
         // Crea un ID univoco per questa potenziale animazione di cattura
-        const captureId = response.lastMultiCapturePath ? 
+        const captureId = response.lastMultiCapturePath ?
                           response.lastMultiCapturePath.join('-') + '-' + response.turno :
                           '';
-        
+
         // Se c'è un percorso di cattura multipla, non l'abbiamo già animato e il turno è cambiato
-        if (response.lastMultiCapturePath && 
+        if (response.lastMultiCapturePath &&
             response.lastMultiCapturePath.length > 1 &&
-            response.turno === this.playerTeam && 
+            response.turno === this.playerTeam &&
             captureId !== this.lastAnimatedCaptureId) {
-            
+
           console.log("Rilevata nuova cattura multipla dell'avversario, avvio animazione");
           // Salva questo ID come l'ultimo animato
           this.lastAnimatedCaptureId = captureId;
-          
+
           // Avvia l'animazione della cattura
           this.startCaptureAnimation(oldBoard, response.lastMultiCapturePath, () => {
             // Callback alla fine dell'animazione: aggiorna completamente lo stato
@@ -224,15 +228,15 @@ export class OnlineBoardComponent implements OnInit, OnDestroy {
           });
           return;
         }
-        
+
         // Altrimenti, aggiorna lo stato normalmente
         this.updateGameState(response);
-        
+
         // Se abbiamo la cronologia mosse, aggiorna le mosse
         if (response.cronologiaMosse && Array.isArray(response.cronologiaMosse)) {
           this.updateMovesFromHistory(response.cronologiaMosse);
         }
-        
+
         console.log("Stato dopo l'aggiornamento: playerTeam=", this.playerTeam, "currentPlayer=", this.currentPlayer);
         console.log("isPlayerTurn() restituisce:", this.isPlayerTurn());
       },
@@ -249,33 +253,33 @@ export class OnlineBoardComponent implements OnInit, OnDestroy {
   updateMovesFromHistory(moveHistory: string[]): void {
 
     this.moves = [];
-    
+
     for (const moveString of moveHistory) {
       // Parse move string in format "fromRow,fromCol-toRow,toCol-player"
       const parts = moveString.split('-');
       if (parts.length < 3) continue; // Skip invalid format
-      
+
       const fromRow = parseInt(parts[0][0]);
       const fromCol = parseInt(parts[0][1]);
       const toRow = parseInt(parts[1][0]);
       const toCol = parseInt(parts[1][1]);
-      
+
       // Check if this is a capture move (distance = 2)
       const isCapture = Math.abs(fromRow - toRow) === 2 && Math.abs(fromCol - toCol) === 2;
-      
+
       // Create move object
       const move: Move = {
         from: { row: fromRow, col: fromCol },
         to: { row: toRow, col: toCol }
       };
-      
+
       // Add captured piece if it's a capture
       if (isCapture) {
         const capturedRow = Math.floor((fromRow + toRow) / 2);
         const capturedCol = Math.floor((fromCol + toCol) / 2);
         move.captured = [{ row: capturedRow, col: capturedCol }];
       }
-      
+
       // Add the move to the moves array
       this.moves.push(move);
     }
@@ -303,14 +307,14 @@ export class OnlineBoardComponent implements OnInit, OnDestroy {
 
     // Riproduzione suono quando cambia il turno verso il giocatore (significa che l'avversario ha fatto una mossa)
     // Solo se non siamo in un'animazione di cattura (che ha già i suoi suoni)
-    if (oldTurn !== this.currentPlayer && 
-        this.currentPlayer === (this.playerTeam === 'WHITE' ? 'white' : 'black') && 
+    if (oldTurn !== this.currentPlayer &&
+        this.currentPlayer === (this.playerTeam === 'WHITE' ? 'white' : 'black') &&
         !this.isAnimatingCapture) {
-      
+
       // Determina se è stata una cattura o una mossa normale in base al conteggio pedine
       const totalOldCount = oldWhiteCount + oldBlackCount;
       const totalNewCount = this.whiteCount + this.blackCount;
-      
+
       if (totalNewCount < totalOldCount) {
         // È stata una cattura (il numero totale di pedine è diminuito)
         this.audioService.playCaptureSound();
@@ -329,7 +333,7 @@ export class OnlineBoardComponent implements OnInit, OnDestroy {
     if (this.gameOver && response.vincitore !== 'NONE') {
       // Converti il vincitore dal formato del backend (WHITE/BLACK) al formato del frontend (white/black)
       this.winner = response.vincitore === 'WHITE' ? 'white' : 'black';
-      
+
       // Riproduci il suono appropriato
       if (this.playerTeam === response.vincitore) {
         this.audioService.playWinSound();
@@ -339,7 +343,7 @@ export class OnlineBoardComponent implements OnInit, OnDestroy {
 
       // Mostra sempre il modale di fine partita, indipendentemente da chi ha vinto
       this.showGameOverModal = true;
-      
+
       console.log(`Partita terminata. Vincitore: ${this.winner}. Il tuo team: ${this.playerTeam}`);
 
       // Se il polling è attivo, lo interrompiamo alla fine della partita
@@ -375,16 +379,16 @@ export class OnlineBoardComponent implements OnInit, OnDestroy {
     if (!this.playerTeam) {
       return false;
     }
-    
+
     // Se manca un avversario, non è ancora il momento di giocare
     if (this.needsOpponent()) {
       return false;
     }
-    
+
     // Verifica se è il nostro turno in base al colore
     const isPlayerTurn = (this.playerTeam === 'WHITE' && this.currentPlayer === 'white') ||
                         (this.playerTeam === 'BLACK' && this.currentPlayer === 'black');
-    
+
     return isPlayerTurn;
   }
   /**
@@ -567,7 +571,7 @@ export class OnlineBoardComponent implements OnInit, OnDestroy {
 
     // Definisci le direzioni in base al tipo di pezzo
     let directions: number[][];
-    
+
     if (cell.isKing) {
       // Le dame possono muoversi e catturare in tutte le direzioni
       directions = [[-1, -1], [-1, 1], [1, -1], [1, 1]];
@@ -629,10 +633,10 @@ export class OnlineBoardComponent implements OnInit, OnDestroy {
     if (!this.isPlayerTurn()) return;
 
     console.log(`Esecuzione mossa da [${fromRow},${fromCol}] a [${toRow},${toCol}]`);
-    
+
     const isCapture = Math.abs(fromRow - toRow) === 2 && Math.abs(fromCol - toCol) === 2;
     console.log(`Questa è una mossa di cattura? ${isCapture}`);
-    
+
     const movingPiece = { ...this.board[fromRow][fromCol] };
     console.log(`Pezzo in movimento: colore=${movingPiece.pieceColor}, re=${movingPiece.isKing}`);
 
@@ -641,22 +645,22 @@ export class OnlineBoardComponent implements OnInit, OnDestroy {
       const capRow = (fromRow + toRow) / 2;
       const capCol = (fromCol + toCol) / 2;
       console.log(`Rimozione pezzo catturato in [${capRow},${capCol}]`);
-      
+
       const capturedPiece = this.board[capRow][capCol];
       console.log(`Pezzo catturato: colore=${capturedPiece.pieceColor}, re=${capturedPiece.isKing}`);
-      
+
       // Verifica che ci sia effettivamente un pezzo da catturare
       if (!capturedPiece.hasPiece) {
         console.error('Errore: non c\'è un pezzo da catturare!');
         return;
       }
-      
+
       // Verifica che sia un pezzo avversario
       if (capturedPiece.pieceColor === movingPiece.pieceColor) {
         console.error('Errore: non puoi catturare i tuoi pezzi!');
         return;
       }
-      
+
       this.board[capRow][capCol] = { hasPiece: false, pieceColor: null, isKing: false };
       this.audioService.playCaptureSound();
     } else {
@@ -666,11 +670,11 @@ export class OnlineBoardComponent implements OnInit, OnDestroy {
     // Sposta il pezzo
     console.log('Spostamento del pezzo');
     this.board[fromRow][fromCol] = { hasPiece: false, pieceColor: null, isKing: false };
-    
+
     // IMPORTANTE: Verifica se la pedina diventa dama
     let becomesKing = false;
     if (!movingPiece.isKing) {
-      if ((movingPiece.pieceColor === 'white' && toRow === 0) || 
+      if ((movingPiece.pieceColor === 'white' && toRow === 0) ||
           (movingPiece.pieceColor === 'black' && toRow === 7)) {
         movingPiece.isKing = true;
         becomesKing = true;
@@ -678,7 +682,7 @@ export class OnlineBoardComponent implements OnInit, OnDestroy {
         console.log(`Pedina ${movingPiece.pieceColor} promossa a dama!`);
       }
     }
-    
+
     // Aggiorna la pedina nella nuova posizione
     this.board[toRow][toCol] = { ...movingPiece };
 
@@ -693,24 +697,24 @@ export class OnlineBoardComponent implements OnInit, OnDestroy {
         this.captureChainStart = { row: fromRow, col: fromCol };
         this.isCapturingMultiple = true;
       }
-      
+
       // Aggiungi questo passo al percorso di cattura
       if (!this.capturePath) {
         this.capturePath = [];
       }
       this.capturePath.push(`${toRow}${toCol}`);
       console.log(`Percorso di cattura aggiornato: ${this.capturePath}`);
-      
+
       // Aggiungi alla cronologia locale
       this.moves = [...this.moves, {
         from: { row: fromRow, col: fromCol },
         to: { row: toRow, col: toCol },
         captured: [{ row: (fromRow + toRow) / 2, col: (fromCol + toCol) / 2 }]
       }];
-      
+
       this.selectedCell = { row: toRow, col: toCol };
       this.highlightedCells = further.map(m => m.to);
-      
+
       // Se è diventata dama, aggiorna l'interfaccia
       if (becomesKing) {
         // Forza un aggiornamento dell'interfaccia
@@ -723,7 +727,7 @@ export class OnlineBoardComponent implements OnInit, OnDestroy {
     else {
       // Fine catena o mossa semplice → invia al server
       const start = this.captureChainStart || { row: fromRow, col: fromCol };
-      
+
       // Se è una mossa semplice o l'ultima cattura, aggiungi alla cronologia locale
       if (!isCapture || !this.captureChainStart) {
         this.moves = [...this.moves, {
@@ -732,19 +736,19 @@ export class OnlineBoardComponent implements OnInit, OnDestroy {
           captured: isCapture ? [{ row: (fromRow + toRow) / 2, col: (fromCol + toCol) / 2 }] : undefined
         }];
       }
-      
+
       // Per l'ultima cattura in una sequenza, aggiungi anche questa posizione al percorso
       if (isCapture && this.captureChainStart) {
         this.capturePath.push(`${toRow}${toCol}`);
       }
-      
+
       // Preparazione del payload con path per il server
       const payload: MoveP = {
         from: `${start.row}${start.col}`,
         to: `${toRow}${toCol}`,
         player: movingPiece.pieceColor!
       };
-      
+
       // Aggiungi il percorso se è una cattura multipla
       if (this.captureChainStart && this.capturePath && this.capturePath.length > 0) {
         payload.path = this.capturePath;
@@ -755,7 +759,7 @@ export class OnlineBoardComponent implements OnInit, OnDestroy {
         next: res => {
           // Quando riceviamo la risposta dal server, aggiorniamo lo stato
           this.updateGameState(res);
-          
+
           if (res && (res as any).cronologiaMosse) {
             this.updateMovesFromHistory((res as any).cronologiaMosse);
           }
@@ -778,22 +782,22 @@ export class OnlineBoardComponent implements OnInit, OnDestroy {
 
   private buildCapturePathFromMoves(): string[] {
     const path: string[] = [];
-    
+
     // Filtra solo le mosse dall'inizio della catena multipla
     const relevantMoves = this.moves.filter((move, index) => {
       // Trova l'indice dove inizia la catena attuale
-      const startIndex = this.moves.findIndex(m => 
-        m.from.row === this.captureChainStart?.row && 
+      const startIndex = this.moves.findIndex(m =>
+        m.from.row === this.captureChainStart?.row &&
         m.from.col === this.captureChainStart?.col
       );
       return index >= startIndex;
     });
-    
+
     // Estrai solo le posizioni di destinazione
     relevantMoves.forEach(move => {
       path.push(`${move.to.row}${move.to.col}`);
     });
-    
+
     return path;
   }
 
@@ -916,38 +920,144 @@ export class OnlineBoardComponent implements OnInit, OnDestroy {
     this.router.navigate(['/play'])
   }
 
+  /**
+   * Helper method to get the DOM element for a piece at the specified position
+   * @param row - Row index of the piece
+   * @param col - Column index of the piece
+   * @returns The DOM element for the piece, or null if not found
+   */
+  private getPieceElement(row: number, col: number): HTMLElement | null {
+    // Find the square element at the specified position
+    const squares = document.querySelectorAll('.square');
+    const index = row * 8 + col;
+
+    if (index >= 0 && index < squares.length) {
+      // Find the piece element within the square
+      return squares[index].querySelector('.piece') as HTMLElement;
+    }
+
+    return null;
+  }
+
+  /**
+   * Handles the start of a drag operation
+   * @param event - The drag event
+   * @param row - Row index of the dragged piece
+   * @param col - Column index of the dragged piece
+   */
+  onDragStart(event: DragEvent, row: number, col: number): void {
+    if (this.gameOver || !this.isPlayerTurn()) {
+      event.preventDefault();
+      return;
+    }
+
+    const cell = this.board[row][col];
+
+    // Only allow dragging the current player's pieces
+    if (!cell.hasPiece || cell.pieceColor !== this.currentPlayer) {
+      event.preventDefault();
+      return;
+    }
+
+    // Store the dragged piece position
+    this.draggedPiece = { row, col };
+
+    // Set the drag image (optional)
+    if (event.dataTransfer) {
+      event.dataTransfer.setData('text/plain', `${row},${col}`);
+      event.dataTransfer.effectAllowed = 'move';
+    }
+
+    // Select the piece and show valid moves
+    this.selectedCell = { row, col };
+    this.highlightedCells = this.getValidMoves(row, col);
+  }
+
+  /**
+   * Handles the end of a drag operation
+   * @param event - The drag event
+   */
+  onDragEnd(event: DragEvent): void {
+    // Reset drag state if no drop occurred
+    this.draggedPiece = null;
+    this.dragOverCell = null;
+  }
+
+  /**
+   * Handles dragging over a potential drop target
+   * @param event - The drag event
+   * @param row - Row index of the target cell
+   * @param col - Column index of the target cell
+   */
+  onDragOver(event: DragEvent, row: number, col: number): void {
+    // Prevent default to allow drop
+    if (this.isHighlight(row, col)) {
+      event.preventDefault();
+
+      // Add drag-over class for visual feedback
+      const element = event.currentTarget as HTMLElement;
+      element.classList.add('drag-over');
+
+      this.dragOverCell = { row, col };
+    }
+  }
+
+  /**
+   * Handles dropping a piece on a target cell
+   * @param event - The drag event
+   * @param row - Row index of the target cell
+   * @param col - Column index of the target cell
+   */
+  onDrop(event: DragEvent, row: number, col: number): void {
+    event.preventDefault();
+
+    // Remove drag-over class
+    const element = event.currentTarget as HTMLElement;
+    element.classList.remove('drag-over');
+
+    // Check if this is a valid drop target
+    if (this.draggedPiece && this.isHighlight(row, col)) {
+      // Make the move
+      this.makeMove(this.draggedPiece.row, this.draggedPiece.col, row, col);
+    }
+
+    // Reset drag state
+    this.draggedPiece = null;
+    this.dragOverCell = null;
+  }
+
   // Metodo per avviare l'animazione della cattura
   startCaptureAnimation(oldBoard: Cell[][], path: string[], onComplete: () => void) {
     console.log('Avvio animazione cattura lungo il percorso:', path);
-    
+
     // Interrompi eventuali animazioni in corso
     if (this.captureAnimationInterval) {
       clearInterval(this.captureAnimationInterval);
       this.captureAnimationInterval = null;
     }
-    
+
     this.isAnimatingCapture = true;
     this.captureAnimationPath = path.map(pos => ({
       row: parseInt(pos[0]),
       col: parseInt(pos[1])
     }));
     this.captureAnimationStep = 0;
-    
+
     // Copia la scacchiera originale da usare per l'animazione
     this.board = JSON.parse(JSON.stringify(oldBoard));
-    
+
     // Identifica il pezzo che sta catturando
     const startRow = this.captureAnimationPath[0].row;
     const startCol = this.captureAnimationPath[0].col;
     const piece = { ...this.board[startRow][startCol] }; // Crea una copia del pezzo
-    
+
     if (!piece.hasPiece) {
       console.error("Errore: nessun pezzo trovato alla posizione iniziale dell'animazione!");
       this.isAnimatingCapture = false;
       onComplete();
       return;
     }
-    
+
     // Intervallo per l'animazione (sposta il pezzo ogni 500ms)
     this.captureAnimationInterval = setInterval(() => {
       if (this.captureAnimationStep < this.captureAnimationPath.length - 1) {
@@ -955,62 +1065,62 @@ export class OnlineBoardComponent implements OnInit, OnDestroy {
         const current = this.captureAnimationPath[this.captureAnimationStep];
         // Prossima posizione
         const next = this.captureAnimationPath[this.captureAnimationStep + 1];
-        
+
         // Calcola la posizione del pezzo catturato
         const capturedRow = (current.row + next.row) / 2;
         const capturedCol = (current.col + next.col) / 2;
-        
+
         // Rimuove il pezzo dalla posizione corrente
-        this.board[current.row][current.col] = { 
-          hasPiece: false, 
-          pieceColor: null, 
-          isKing: false 
+        this.board[current.row][current.col] = {
+          hasPiece: false,
+          pieceColor: null,
+          isKing: false
         };
-        
+
         // Rimuove il pezzo catturato
-        this.board[capturedRow][capturedCol] = { 
-          hasPiece: false, 
-          pieceColor: null, 
-          isKing: false 
+        this.board[capturedRow][capturedCol] = {
+          hasPiece: false,
+          pieceColor: null,
+          isKing: false
         };
-        
+
         // Verifica se la pedina diventa dama
         let becameKing = false;
         if (!piece.isKing) {
-          if ((piece.pieceColor === 'white' && next.row === 0) || 
+          if ((piece.pieceColor === 'white' && next.row === 0) ||
               (piece.pieceColor === 'black' && next.row === 7)) {
             // La pedina diventa dama
             piece.isKing = true;
             becameKing = true;
-            
+
             // Riproduci suono promozione a dama
             this.audioService.playKingSound();
-            
+
             console.log(`Pedina ${piece.pieceColor} promossa a dama durante l'animazione`);
           }
         }
-        
+
         // Sposta il pezzo nella nuova posizione
         this.board[next.row][next.col] = {
           hasPiece: true,
           pieceColor: piece.pieceColor,
           isKing: piece.isKing
         };
-        
+
         // MIGLIORAMENTO: Forza un aggiornamento dell'interfaccia immediatamente
         // se la pedina è diventata dama, così da mostrare la corona
         if (becameKing) {
           // Creiamo una copia della scacchiera per forzare Angular a rilevare la modifica
           this.board = [...this.board.map(row => [...row])];
-          
+
           // In alternativa, possiamo usare il change detector di Angular
           // ma questo richiede l'injection di ChangeDetectorRef nel costruttore
           // this.changeDetector.detectChanges();
         }
-        
+
         // Riproduci il suono di cattura
         this.audioService.playCaptureSound();
-        
+
         // Avanza all'animazione successiva
         this.captureAnimationStep++;
       } else {
@@ -1018,7 +1128,7 @@ export class OnlineBoardComponent implements OnInit, OnDestroy {
         clearInterval(this.captureAnimationInterval);
         this.captureAnimationInterval = null;
         this.isAnimatingCapture = false;
-        
+
         // Callback per completare l'aggiornamento
         onComplete();
       }
