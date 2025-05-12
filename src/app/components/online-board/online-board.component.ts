@@ -1,3 +1,4 @@
+import { Router } from '@angular/router';
 import { NgClass, NgForOf, NgIf } from '@angular/common';
 import { OnlineMovesComponent as MovesComponent } from '../online-moves/online-moves.component';
 import { ChatComponent } from '../chat/chat.component';
@@ -9,6 +10,7 @@ import { interval, Subscription } from 'rxjs';
 import {MoveP} from '../../../model/entities/MoveP';
 import {Component, Inject, OnDestroy, OnInit} from '@angular/core';
 import { AudioService } from '../../../services/audio.service';
+import { TranslateModule } from '@ngx-translate/core';
 
 export interface PlayerDto {
   id: string;
@@ -29,8 +31,8 @@ export interface GameResponse {
   partitaTerminata: boolean;
   vincitore: 'WHITE' | 'BLACK' | 'NONE';
   players: PlayerDto[];
+  lastMultiCapturePath?: string[];
 }
-
 /**
  * Interface representing a cell on the checkers board
  */
@@ -49,6 +51,7 @@ interface Move {
   captured?: { row: number, col: number }[];
 }
 
+
 @Component({
   selector: 'app-online-board',
   imports: [
@@ -56,18 +59,15 @@ interface Move {
     NgClass,
     NgIf,
     MovesComponent,
-    ChatComponent
+    ChatComponent,
+    TranslateModule
   ],
   templateUrl: './online-board.component.html',
   styleUrl: './online-board.component.css',
   standalone: true
 })
 export class OnlineBoardComponent implements OnInit, OnDestroy {
-  // Proprietà per gestire la cattura multipla
-  isCapturingMultiple: boolean = false;
-  lastCapturePosition: { row: number; col: number } | null = null;
-  waitingForNextCapture: boolean = false;
-
+  private captureChainStart: { row: number; col: number } | null = null;
   origin: string | undefined
   board: Cell[][] = [];
   highlightedCells: { row: number, col: number }[] = [];
@@ -90,14 +90,29 @@ export class OnlineBoardComponent implements OnInit, OnDestroy {
   columns: string[] = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
   rows: number[] = [1, 2, 3, 4, 5, 6, 7, 8];
   nickname: string | null = localStorage.getItem('nickname');
+  capturePath: string[] = [];
+
+  isAnimatingCapture: boolean = false;
+  captureAnimationPath: { row: number, col: number }[] = [];
+  captureAnimationStep: number = 0;
+  captureAnimationInterval: any = null;
+  lastAnimatedCaptureId: string = '';
+
+  // All'inizio della classe OnlineBoardComponent, con le altre proprietà
   lastProcessedMoveCount: number = 0;
-  protected chatHistory: string='';
+
+  // FERMA IL POLLING QUANDO L'UTENTE STA FACENDO MOSSE MULTIPLE
+  isCapturingMultiple: boolean = false;
+
+  // Proprietà per tenere traccia dello stato di copia del link della partita
   linkCopied: boolean = false;
+  protected chatHistory: string='';
 
   constructor(
     private moveService: MoveServiceService,
     private gameService: GameService,
     private route: ActivatedRoute,
+    private router: Router,
     private audioService: AudioService,
     @Inject(DOCUMENT) private document: Document
   ) {
@@ -107,6 +122,8 @@ export class OnlineBoardComponent implements OnInit, OnDestroy {
   ngOnInit() {
     this.gameID = this.route.snapshot.paramMap.get('gameId')!;
     this.initBoard();
+
+    // Inizia il polling per aggiornamenti di stato
     this.startPolling();
   }
 
@@ -114,47 +131,68 @@ export class OnlineBoardComponent implements OnInit, OnDestroy {
     if (this.pollingSubscription) {
       this.pollingSubscription.unsubscribe();
     }
+    
+    if (this.captureAnimationInterval) {
+      clearInterval(this.captureAnimationInterval);
+    }
   }
 
+  /**
+   * Start polling for game state updates
+   */
   startPolling() {
+    // Fai subito una chiamata iniziale
     this.fetchGameState();
+
+    // Poi inizia il polling ogni 2 secondi
     this.pollingSubscription = interval(2000).subscribe(() => {
-      if (!this.isCapturingMultiple) {
-        this.fetchGameState();
-      }
+      this.fetchGameState();
     });
   }
 
+  /**
+   * Fetch the current game state from the backend
+   */
   fetchGameState() {
-    if (!this.gameID) return;
-
+    if (!this.gameID || this.isAnimatingCapture) return;
+    
     this.gameService.getGameState(this.gameID).subscribe({
       next: (response: GameResponse) => {
-        // Aggiorna sempre la chat history, anche durante una cattura multipla
-        this.chatHistory = response.chat ?? '';
-
-        if (this.isCapturingMultiple) {
-          console.log('Ignorando aggiornamento di stato durante cattura multipla');
-          return;
-        }
-
-        console.log('Game state response:', response);
-
+        console.log("Risposta dal server:", response);
+        console.log("Players nella risposta:", response.players);
+        
+        // Log del nickname attuale
         const nickname = localStorage.getItem('nickname');
         console.log('Nickname corrente in localStorage:', nickname);
-
+        
         if (nickname) {
+          // Cerca il giocatore tra quelli nella partita
           const playerMatch = response.players.find(p => p.nickname === nickname);
           if (playerMatch) {
             this.playerTeam = playerMatch.team as 'WHITE' | 'BLACK';
             console.log(`Trovato giocatore con nickname ${nickname}, team assegnato: ${this.playerTeam}`);
           } else {
-            console.log(`Nessun giocatore con nickname ${nickname} trovato nei giocatori della partita`);
+            console.log(`Nessun giocatore con nickname ${nickname} trovato nei giocatori della partita:`, response.players);
           }
         } else {
           console.log('Nessun nickname trovato in localStorage');
         }
 
+        // Se stiamo facendo una cattura multipla, non aggiorniamo lo stato
+        if (this.isCapturingMultiple) {
+          console.log("In corso cattura multipla, aggiorno solo la chat");
+          // Aggiorna solo la chat, non lo stato della scacchiera
+          this.chatHistory = response.chat ?? '';
+          return;
+        }
+
+        // Salva lo stato attuale della scacchiera per confronto
+        const oldBoard = JSON.parse(JSON.stringify(this.board));
+        
+        // Aggiorna la chat
+        this.chatHistory = response.chat ?? '';
+        
+        // Aggiorna i nickname dei giocatori
         for (const player of response.players) {
           if (player.team === 'WHITE') {
             this.whitePlayerNickname = player.nickname;
@@ -162,28 +200,41 @@ export class OnlineBoardComponent implements OnInit, OnDestroy {
             this.blackPlayerNickname = player.nickname;
           }
         }
-
+        
+        // SOLUZIONE al bug dell'animazione che si ripete
+        // Crea un ID univoco per questa potenziale animazione di cattura
+        const captureId = response.lastMultiCapturePath ? 
+                          response.lastMultiCapturePath.join('-') + '-' + response.turno :
+                          '';
+        
+        // Se c'è un percorso di cattura multipla, non l'abbiamo già animato e il turno è cambiato
+        if (response.lastMultiCapturePath && 
+            response.lastMultiCapturePath.length > 1 &&
+            response.turno === this.playerTeam && 
+            captureId !== this.lastAnimatedCaptureId) {
+            
+          console.log("Rilevata nuova cattura multipla dell'avversario, avvio animazione");
+          // Salva questo ID come l'ultimo animato
+          this.lastAnimatedCaptureId = captureId;
+          
+          // Avvia l'animazione della cattura
+          this.startCaptureAnimation(oldBoard, response.lastMultiCapturePath, () => {
+            // Callback alla fine dell'animazione: aggiorna completamente lo stato
+            this.updateGameState(response);
+          });
+          return;
+        }
+        
+        // Altrimenti, aggiorna lo stato normalmente
         this.updateGameState(response);
-
+        
+        // Se abbiamo la cronologia mosse, aggiorna le mosse
         if (response.cronologiaMosse && Array.isArray(response.cronologiaMosse)) {
           this.updateMovesFromHistory(response.cronologiaMosse);
         }
-
-        // Verifica se siamo in una situazione di cattura multipla
-        // Se il turno è ancora nostro dopo un'ultima mossa di cattura
-        if (this.waitingForNextCapture && this.isPlayerTurn()) {
-          console.log('Rilevata possibile cattura multipla - turno ancora del giocatore');
-          this.isCapturingMultiple = true;
-          // Preseleziona automaticamente la pedina che ha appena catturato
-          if (this.lastCapturePosition) {
-            console.log('Selezionando automaticamente la pedina in posizione:', this.lastCapturePosition);
-            this.selectCell(this.lastCapturePosition.row, this.lastCapturePosition.col);
-          }
-        } else {
-          this.waitingForNextCapture = false;
-          this.isCapturingMultiple = false;
-          this.lastCapturePosition = null;
-        }
+        
+        console.log("Stato dopo l'aggiornamento: playerTeam=", this.playerTeam, "currentPlayer=", this.currentPlayer);
+        console.log("isPlayerTurn() restituisce:", this.isPlayerTurn());
       },
       error: (error) => {
         console.error('Errore nel recupero dello stato del gioco:', error);
@@ -191,71 +242,119 @@ export class OnlineBoardComponent implements OnInit, OnDestroy {
     });
   }
 
-
+  /**
+   * Updates moves array from server move history
+   * @param moveHistory - Array of move strings from server
+   */
   updateMovesFromHistory(moveHistory: string[]): void {
+
     this.moves = [];
-
+    
     for (const moveString of moveHistory) {
+      // Parse move string in format "fromRow,fromCol-toRow,toCol-player"
       const parts = moveString.split('-');
-      if (parts.length < 3) continue;
-
+      if (parts.length < 3) continue; // Skip invalid format
+      
       const fromRow = parseInt(parts[0][0]);
       const fromCol = parseInt(parts[0][1]);
       const toRow = parseInt(parts[1][0]);
       const toCol = parseInt(parts[1][1]);
-
+      
+      // Check if this is a capture move (distance = 2)
       const isCapture = Math.abs(fromRow - toRow) === 2 && Math.abs(fromCol - toCol) === 2;
-
+      
+      // Create move object
       const move: Move = {
         from: { row: fromRow, col: fromCol },
         to: { row: toRow, col: toCol }
       };
-
+      
+      // Add captured piece if it's a capture
       if (isCapture) {
         const capturedRow = Math.floor((fromRow + toRow) / 2);
         const capturedCol = Math.floor((fromCol + toCol) / 2);
         move.captured = [{ row: capturedRow, col: capturedCol }];
       }
-
+      
+      // Add the move to the moves array
       this.moves.push(move);
     }
   }
 
+  /**
+   * Updates the game state based on the response from the server
+   */
   updateGameState(response: GameResponse) {
+    // Salva lo stato precedente per confronto
+    const oldBoard = this.board ? JSON.parse(JSON.stringify(this.board)) : null;
+    const oldTurn = this.currentPlayer;
+
+    // Aggiorna il turno corrente
     this.currentPlayer = response.turno === 'WHITE' ? 'white' : 'black';
+
+    // Aggiorna la board
     this.updateBoardFromState(response.board);
+
+    // Aggiorna conteggi pedine
+    const oldWhiteCount = this.whiteCount;
+    const oldBlackCount = this.blackCount;
     this.whiteCount = response.pedineW + response.damaW;
     this.blackCount = response.pedineB + response.damaB;
+
+    // Riproduzione suono quando cambia il turno verso il giocatore (significa che l'avversario ha fatto una mossa)
+    // Solo se non siamo in un'animazione di cattura (che ha già i suoi suoni)
+    if (oldTurn !== this.currentPlayer && 
+        this.currentPlayer === (this.playerTeam === 'WHITE' ? 'white' : 'black') && 
+        !this.isAnimatingCapture) {
+      
+      // Determina se è stata una cattura o una mossa normale in base al conteggio pedine
+      const totalOldCount = oldWhiteCount + oldBlackCount;
+      const totalNewCount = this.whiteCount + this.blackCount;
+      
+      if (totalNewCount < totalOldCount) {
+        // È stata una cattura (il numero totale di pedine è diminuito)
+        this.audioService.playCaptureSound();
+        console.log("Riproduco suono cattura per mossa dell'avversario");
+      } else {
+        // È stata una mossa normale
+        this.audioService.playMoveSound();
+        console.log("Riproduco suono mossa per mossa dell'avversario");
+      }
+    }
+
+    // Aggiorna stato fine partita
     this.gameOver = response.partitaTerminata;
 
+    // Mostra il modale di fine partita sia al vincitore che al perdente
     if (this.gameOver && response.vincitore !== 'NONE') {
-      if (this.pollingSubscription) {
-        this.pollingSubscription.unsubscribe();
-        this.pollingSubscription = null;
-      }
-
+      // Converti il vincitore dal formato del backend (WHITE/BLACK) al formato del frontend (white/black)
       this.winner = response.vincitore === 'WHITE' ? 'white' : 'black';
+      
+      // Riproduci il suono appropriato
       if (this.playerTeam === response.vincitore) {
         this.audioService.playWinSound();
       } else {
         this.audioService.playLoseSound();
       }
 
-      this.gameService.deleteGame(this.gameID).subscribe({
-        next: () => {
-          console.log('Partita eliminata con successo');
-          this.showGameOverModal = true;
-        },
-        error: (err) => {
-          console.error('Errore nell\'eliminazione della partita:', err);
-          this.showGameOverModal = true;
-        }
-      });
+      // Mostra sempre il modale di fine partita, indipendentemente da chi ha vinto
+      this.showGameOverModal = true;
+      
+      console.log(`Partita terminata. Vincitore: ${this.winner}. Il tuo team: ${this.playerTeam}`);
+
+      // Se il polling è attivo, lo interrompiamo alla fine della partita
+      if (this.pollingSubscription) {
+        this.pollingSubscription.unsubscribe();
+        this.pollingSubscription = null;
+      }
     }
 
     console.log(`Stato aggiornato: Turno ${this.currentPlayer}, Team giocatore: ${this.playerTeam}`);
   }
 
+  /**
+   * Updates the board based on the state received from the server
+   */
   updateBoardFromState(boardState: string[][]) {
     if (!boardState || !Array.isArray(boardState)) return;
 
@@ -268,475 +367,664 @@ export class OnlineBoardComponent implements OnInit, OnDestroy {
     );
   }
 
+  /**
+   * Check if it's the current player's turn
+   */
   isPlayerTurn(): boolean {
-    if (!this.playerTeam) return false;
-
+    // Se non abbiamo ancora un ruolo, non è il nostro turno
+    if (!this.playerTeam) {
+      return false;
+    }
+    
+    // Se manca un avversario, non è ancora il momento di giocare
+    if (this.needsOpponent()) {
+      return false;
+    }
+    
+    // Verifica se è il nostro turno in base al colore
     const isPlayerTurn = (this.playerTeam === 'WHITE' && this.currentPlayer === 'white') ||
-                          (this.playerTeam === 'BLACK' && this.currentPlayer === 'black');
-
+                        (this.playerTeam === 'BLACK' && this.currentPlayer === 'black');
+    
     return isPlayerTurn;
   }
-
+  /**
+   * Initialize the game board with pieces in starting positions
+   */
   initBoard() {
-    // Inizializza la scacchiera vuota 8x8
-    this.board = Array(8).fill(0).map(() =>
-      Array(8).fill(0).map(() => ({
-        hasPiece: false,
-        pieceColor: null,
+    const initialData = [
+      [ "", "b", "", "b", "", "b", "", "b" ],
+      [ "b", "", "b", "", "b", "", "b", "" ],
+      [ "", "b", "", "b", "", "b", "", "b" ],
+      [ "",  "",  "",  "",  "",  "",  "",  "" ],
+      [ "",  "",  "",  "",  "",  "",  "",  "" ],
+      [ "w", "", "w", "", "w", "", "w", "" ],
+      [ "", "w", "", "w", "", "w", "", "w" ],
+      [ "w", "", "w", "", "w", "", "w", "" ],
+    ];
+    this.board = initialData.map(row =>
+      row.map(cell => ({
+        hasPiece: cell === 'b' || cell === 'w',
+        pieceColor: cell === 'b' ? 'black' : cell === 'w' ? 'white' : null,
         isKing: false
       }))
     );
+
+    this.currentPlayer = 'white'; // turno iniziale
+    this.moves = []; // memorizza cronologia mosse
+    this.gameOver = false; // partita non terminata
+    this.showGameOverModal = false; // nasconde modale di fine partita
+    this.winner = null;
+    this.highlightedCells = []; // pulisce celle evidenziate sulla scacchiera
+    this.selectedCell = null; // nessun pezzo è selezionato
   }
 
-  // Metodo per verificare se una cella è evidenziata (valida per la mossa)
-  isHighlighted(row: number, col: number): boolean {
+  /**
+   * Determines if a cell should be colored light
+   * @param row - Row index of the cell
+   * @param col - Column index of the cell
+   * @returns True if the cell should be light colored
+   */
+  isLight(row: number, col: number): boolean {
+    return (row + col) % 2 === 0;
+  }
+
+  /**
+   * Determines if a cell should be highlighted as a possible move
+   * @param row - Row index of the cell
+   * @param col - Column index of the cell
+   * @returns True if the cell is a possible move
+   */
+  isHighlight(row: number, col: number): boolean {
     return this.highlightedCells.some(cell => cell.row === row && cell.col === col);
   }
 
-  // Metodo chiamato quando si clicca su una cella
-  selectCell(row: number, col: number) {
-    // Non consentire mosse se non è il turno del giocatore o se la partita è terminata
-    if (!this.isPlayerTurn() || this.gameOver) {
+  /**
+   * Determines if a cell is currently selected
+   * @param row - Row index of the cell
+   * @param col - Column index of the cell
+   * @returns True if the cell is currently selected
+   */
+  isSelected(row: number, col: number): boolean {
+    return this.selectedCell?.row === row && this.selectedCell?.col === col;
+  }
+
+  /**
+   * Handles click events on board cells
+   * @param row - Row index of the clicked cell
+   * @param col - Column index of the clicked cell
+  */
+  onCellClick(row: number, col: number): void {
+    if (this.gameOver) return;
+
+    // Verifica se è il turno del giocatore
+    if (!this.isPlayerTurn()) {
+      console.log('Non è il tuo turno! Attendi la mossa dell\'avversario.');
       return;
     }
 
     const cell = this.board[row][col];
-    const isPlayerWhite = this.playerTeam === 'WHITE';
 
-    console.log('Cella selezionata:', row, col, 'isCapturingMultiple:', this.isCapturingMultiple);
-
-    // Se è in corso una cattura multipla, gestisci in modo specifico
-    if (this.isCapturingMultiple && this.lastCapturePosition) {
-      console.log('Cattura multipla in corso, ultima posizione:', this.lastCapturePosition);
-
-      // Se stiamo selezionando una cella diversa dalla pedina che ha appena catturato
-      if (row !== this.lastCapturePosition.row || col !== this.lastCapturePosition.col) {
-        // Se la cella è una destinazione valida (è evidenziata), allora permetti la mossa
-        if (this.isHighlighted(row, col)) {
-          console.log('Muovendo verso una cella evidenziata in cattura multipla');
-          this.makeMove(this.lastCapturePosition.row, this.lastCapturePosition.col, row, col);
-          return;
-        } else {
-          console.log('In cattura multipla: puoi muovere solo la pedina che ha appena catturato');
-          return;
-        }
-      } else {
-        // Stiamo selezionando la stessa pedina che ha appena catturato
-        this.selectedCell = { row, col };
-        // Calcola solo le mosse di cattura per questa pedina
-        this.highlightCaptureMovesForMultipleCapture(row, col, cell.pieceColor === 'white', cell.isKing);
-        return;
-      }
-    }
-
-    // Verifica se ci sono mosse di cattura obbligatorie nel gioco
-    const allPossibleCaptures = this.findAllPossibleCaptures(isPlayerWhite);
-
-    // Se il giocatore ha già selezionato una cella
-    if (this.selectedCell) {
-      // Se si clicca sulla stessa cella, deselezionala
-      if (this.selectedCell.row === row && this.selectedCell.col === col) {
-        this.selectedCell = null;
-        this.highlightedCells = [];
-        return;
-      }
-
-      // Se si clicca su una cella vuota evidenziata, effettua una mossa
-      if (!cell.hasPiece && this.isHighlighted(row, col)) {
-        this.makeMove(this.selectedCell.row, this.selectedCell.col, row, col);
-        return;
-      }
-
-      // Se si clicca su un'altra pedina, cambia selezione
-      if (cell.hasPiece) {
-        const isPieceCurrentPlayer = (cell.pieceColor === 'white' && isPlayerWhite) ||
-                                  (cell.pieceColor === 'black' && !isPlayerWhite);
-
-        if (isPieceCurrentPlayer) {
-          // Se ci sono catture obbligatorie, verifica se questa pedina può catturare
-          if (allPossibleCaptures.length > 0) {
-            const canThisPieceCapture = allPossibleCaptures.some(capture =>
-              capture.piece.row === row && capture.piece.col === col
-            );
-
-            if (canThisPieceCapture) {
-              this.selectedCell = { row, col };
-              this.highlightValidMoves(row, col, cell.pieceColor === 'white', cell.isKing);
-            } else {
-              // Non selezionare pedine che non possono catturare se ci sono catture obbligatorie
-              console.log('Questa pedina non può catturare. Seleziona una pedina che può catturare.');
-            }
-          } else {
-            // Se non ci sono catture obbligatorie, seleziona normalmente
-            this.selectedCell = { row, col };
-            this.highlightValidMoves(row, col, cell.pieceColor === 'white', cell.isKing);
-          }
-        }
-        return;
-      }
-    }
-
-    // Seleziona una nuova pedina solo se appartiene al giocatore corrente
-    if (cell.hasPiece &&
-        ((cell.pieceColor === 'white' && isPlayerWhite) ||
-         (cell.pieceColor === 'black' && !isPlayerWhite))) {
-
-      // Se ci sono catture obbligatorie, verifica se questa pedina può catturare
-      if (allPossibleCaptures.length > 0) {
-        const canThisPieceCapture = allPossibleCaptures.some(capture =>
-          capture.piece.row === row && capture.piece.col === col
-        );
-
-        if (canThisPieceCapture) {
-          this.selectedCell = { row, col };
-          this.highlightValidMoves(row, col, cell.pieceColor === 'white', cell.isKing);
-        } else {
-          // Non selezionare pedine che non possono catturare se ci sono catture obbligatorie
-          console.log('Questa pedina non può catturare. Seleziona una pedina che può catturare.');
-        }
-      } else {
-        // Se non ci sono catture obbligatorie, seleziona normalmente
-        this.selectedCell = { row, col };
-        this.highlightValidMoves(row, col, cell.pieceColor === 'white', cell.isKing);
-      }
-    } else {
-      this.selectedCell = null;
-      this.highlightedCells = [];
-    }
-  }
-
-  // Aggiungi questo nuovo metodo per evidenziare solo le mosse di cattura durante una cattura multipla
-  highlightCaptureMovesForMultipleCapture(row: number, col: number, isWhite: boolean, isKing: boolean) {
-    this.highlightedCells = [];
-
-    // Trova solo le mosse di cattura
-    const captureMoves = this.findCaptureMoves(row, col, isWhite, isKing);
-    this.highlightedCells = captureMoves;
-
-    console.log('Mosse di cattura disponibili durante cattura multipla:', captureMoves);
-  }
-
-  // Correzione del metodo highlightValidMoves per le regole della dama italiana
-  highlightValidMoves(row: number, col: number, isWhite: boolean, isKing: boolean) {
-    this.highlightedCells = [];
-
-    // Verifica se ci sono mosse di cattura disponibili per qualsiasi pedina del giocatore corrente
-    const allPlayerCaptures = this.findAllPossibleCaptures(isWhite);
-
-    // Se ci sono catture possibili nel gioco, il giocatore è obbligato a catturare
-    if (allPlayerCaptures.length > 0) {
-      // Trova la pedina selezionata nell'elenco delle pedine che possono catturare
-      const selectedPieceCaptures = allPlayerCaptures.find(item =>
-        item.piece.row === row && item.piece.col === col
-      );
-
-      // Se questa pedina specifica può catturare, mostra le sue mosse di cattura
-      if (selectedPieceCaptures) {
-        this.highlightedCells = selectedPieceCaptures.moves;
-        console.log('Mosse di cattura disponibili per questa pedina:', selectedPieceCaptures.moves);
-      } else {
-        // Questa pedina non può catturare, mentre altre pedine possono
-        // In questo caso, non mostrare mosse possibili (obbligo di cattura)
-        console.log('Questa pedina non può catturare, ma altre sì. Seleziona una pedina che può catturare.');
-        this.highlightedCells = [];
-      }
+    // If a highlighted cell is clicked, it means making a move
+    if (this.isHighlight(row, col) && this.selectedCell) {
+      this.makeMove(this.selectedCell.row, this.selectedCell.col, row, col);
       return;
     }
 
-    // Se non ci sono mosse di cattura obbligatorie, mostra le mosse normali
-    // Direzioni di movimento
-    const directions = isKing
-      ? [[-1, -1], [-1, 1], [1, -1], [1, 1]] // La Dama può muoversi in tutte le direzioni (ma solo una casella)
-      : isWhite
-        ? [[-1, -1], [-1, 1]] // Pedina bianca va verso l'alto
-        : [[1, -1], [1, 1]];  // Pedina nera va verso il basso
+    // Clear previous highlights if clicking on a new cell
+    this.highlightedCells = [];
 
-    // Cerca mosse normali
-    for (const [dr, dc] of directions) {
-      // Nella dama italiana, sia le pedine che le dame si muovono di una sola casella
-      // La differenza è che le dame possono muoversi in tutte le direzioni
-      const newRow = row + dr;
-      const newCol = col + dc;
-
-      // Controlla se la nuova posizione è all'interno della scacchiera
-      if (newRow >= 0 && newRow <= 7 && newCol >= 0 && newCol <= 7) {
-        // Controlla se la cella è vuota
-        if (!this.board[newRow][newCol].hasPiece) {
-          this.highlightedCells.push({ row: newRow, col: newCol });
-        }
-      }
-    }
-  }
-
-  // Correzione del metodo findCaptureMoves per le regole della dama italiana
-  findCaptureMoves(row: number, col: number, isWhite: boolean, isKing: boolean): { row: number, col: number }[] {
-    const captureMoves: { row: number, col: number }[] = [];
-
-    // Tutte le direzioni diagonali
-    const directions = [[-1, -1], [-1, 1], [1, -1], [1, 1]];
-
-    // Per le pedine normali, limitiamo la direzione in base al colore (solo in avanti)
-    const normalPieceDirections = isWhite
-      ? [[-1, -1], [-1, 1]] // Pedina bianca va verso l'alto
-      : [[1, -1], [1, 1]];  // Pedina nera va verso il basso
-
-    // Usa le direzioni appropriate in base al tipo di pedina
-    // Nella dama italiana, la dama può muoversi in tutte le direzioni ma solo di una casella alla volta
-    const applicableDirections = isKing ? directions : normalPieceDirections;
-
-    for (const [dr, dc] of applicableDirections) {
-      // Per la dama italiana, le regole di cattura sono simili per dame e pedine normali
-      // La differenza è che la dama può catturare in tutte le direzioni
-      const midRow = row + dr;
-      const midCol = col + dc;
-      const landRow = row + 2 * dr;
-      const landCol = col + 2 * dc;
-
-      // Controlla se la posizione di atterraggio è all'interno della scacchiera
-      if (landRow >= 0 && landRow <= 7 && landCol >= 0 && landCol <= 7) {
-        // Controlla se c'è una pedina avversaria in mezzo
-        if (this.board[midRow][midCol].hasPiece &&
-            ((isWhite && this.board[midRow][midCol].pieceColor === 'black') ||
-             (!isWhite && this.board[midRow][midCol].pieceColor === 'white')) &&
-            !this.board[landRow][landCol].hasPiece) {
-          // Aggiungi la mossa di cattura
-          captureMoves.push({ row: landRow, col: landCol });
-        }
-      }
+    // If the cell has no piece or it's not the current player's piece, do nothing
+    if (!cell.hasPiece || cell.pieceColor !== this.currentPlayer) {
+      this.selectedCell = null;
+      return;
     }
 
-    return captureMoves;
+    this.selectedCell = { row, col };
+
+    // Get and show all possible moves
+    this.highlightedCells = this.getValidMoves(row, col);
   }
 
-  // Versione corretta di findAllPossibleCaptures per la dama italiana
-  findAllPossibleCaptures(isWhitePlayer: boolean): { piece: { row: number, col: number }, moves: { row: number, col: number }[] }[] {
-    const result: { piece: { row: number, col: number }, moves: { row: number, col: number }[] }[] = [];
+  /**
+   * Gets valid moves for a piece at the specified position
+   * @param row - Row index of the piece
+   * @param col - Column index of the piece
+   * @returns Array of positions representing valid moves
+   */
+  getValidMoves(row: number, col: number): { row: number, col: number }[] {
+    const validMoves: { row: number, col: number }[] = [];
+    const cell = this.board[row][col];
 
-    // Controlla ogni cella della scacchiera
+    // Check if there are any forced captures first
+    const allCaptures = this.getAllForcedCaptures();
+
+    // If there are forced captures, only return those for this piece
+    if (allCaptures.length > 0) {
+      return allCaptures
+        .filter(m => m.from.row === row && m.from.col === col)
+        .map(m => m.to);
+    }
+
+    // No forced captures, so return regular moves
+    const directions = cell.isKing
+      ? [[1, 1], [1, -1], [-1, 1], [-1, -1]] // Kings can move in all diagonal directions
+      : cell.pieceColor === 'white' ? [[-1, 1], [-1, -1]] : [[1, 1], [1, -1]]; // Regular pieces move forward only
+
+    // calcola e aggiunge le mosse normali (non di cattura) che un pezzo può fare
+    directions.forEach(([dr, dc]) => {
+      const r2 = row + dr;
+      const c2 = col + dc;
+
+      if (this.isValidPosition(r2, c2) && !this.board[r2][c2].hasPiece) {
+        validMoves.push({ row: r2, col: c2 });
+      }
+    });
+
+    return validMoves;
+  }
+
+  /**
+   * Gets all possible capture moves for the current player
+   * @returns Array of moves that involve capturing opponent pieces
+   */
+  getAllForcedCaptures(): Move[] {
+    const captures: Move[] = [];
+
+    // Scan the entire board for forced captures
     for (let r = 0; r < 8; r++) {
       for (let c = 0; c < 8; c++) {
         const cell = this.board[r][c];
 
-        // Verifica che ci sia una pedina del giocatore corrente
-        if (cell.hasPiece) {
-          const isPieceWhite = cell.pieceColor === 'white';
+        // Skip empty cells or opponent's pieces
+        if (!cell.hasPiece || cell.pieceColor !== this.currentPlayer) continue;
 
-          // Assicurati che sia una pedina del giocatore corrente
-          if ((isWhitePlayer && isPieceWhite) || (!isWhitePlayer && !isPieceWhite)) {
-            // Trova le mosse di cattura per questa pedina
-            const captureMoves = this.findCaptureMoves(r, c, isPieceWhite, cell.isKing);
-
-            // Se questa pedina può fare catture, aggiungi all'elenco
-            if (captureMoves.length > 0) {
-              result.push({
-                piece: { row: r, col: c },
-                moves: captureMoves
-              });
-            }
-          }
-        }
+        // Get captures for this piece
+        const pieceCapturesMoves = this.getCapturesForPiece(r, c);
+        captures.push(...pieceCapturesMoves);
       }
     }
 
-    // Nella dama italiana, se una dama può catturare, essa ha la priorità sulle pedine normali
-    const damaCatture = result.filter(item =>
-      this.board[item.piece.row][item.piece.col].isKing
-    );
-
-    if (damaCatture.length > 0) {
-      return damaCatture;
-    }
-
-    return result;
+    return captures;
   }
 
-  // Modificare makeMove per seguire le regole della dama italiana
-  makeMove(fromRow: number, fromCol: number, toRow: number, toCol: number) {
-    // Calcola se è una mossa di cattura (sempre 2 caselle di distanza nella dama italiana)
-    const isCapture = Math.abs(fromRow - toRow) === 2 && Math.abs(fromCol - toCol) === 2;
-    const isKing = this.board[fromRow][fromCol].isKing;
+  /**
+   * Gets all possible capture moves for a specific piece
+   * @param row - Row index of the piece
+   * @param col - Column index of the piece
+   * @returns Array of capture moves for the piece
+   */
+  getCapturesForPiece(row: number, col: number): Move[] {
+    console.log(`Cercando catture per pezzo in [${row},${col}]`);
+    const captures: Move[] = [];
+    const cell = this.board[row][col];
 
-    // Trova le pedine catturate se è una mossa di cattura
-    const capturedPieces: { row: number, col: number }[] = [];
-    if (isCapture) {
-      // Nella dama italiana, sia le pedine che le dame catturano saltando nella casella immediatamente successiva
-      const capturedRow = Math.floor((fromRow + toRow) / 2);
-      const capturedCol = Math.floor((fromCol + toCol) / 2);
-      capturedPieces.push({ row: capturedRow, col: capturedCol });
-
-      // Se cattura, imposta flag per possibile cattura multipla
-      this.lastCapturePosition = { row: toRow, col: toCol };
+    if (!cell.hasPiece) {
+      console.log('La cella non contiene un pezzo');
+      return captures;
     }
 
-    // Invia la mossa al server
-    this.sendMoveToServer(fromRow, fromCol, toRow, toCol);
-  }
+    console.log(`Pezzo trovato: colore=${cell.pieceColor}, re=${cell.isKing}`);
 
-  // Modificare sendMoveToServer per seguire le regole della dama italiana
-  sendMoveToServer(fromRow: number, fromCol: number, toRow: number, toCol: number) {
-    const moveDto: MoveP = {
-      from: `${fromRow}${fromCol}`,
-      to: `${toRow}${toCol}`,
-      player: this.playerTeam || ''
-    };
-
-    // Flag per indicare che stiamo aspettando una risposta per cattura multipla
-    const isCapture = Math.abs(fromRow - toRow) === 2 && Math.abs(fromCol - toCol) === 2;
-
-    if (isCapture) {
-      this.waitingForNextCapture = true;
-      // Memorizza la posizione finale per la prossima mossa di cattura
-      this.lastCapturePosition = {row: toRow, col: toCol};
+    // Definisci le direzioni in base al tipo di pezzo
+    let directions: number[][];
+    
+    if (cell.isKing) {
+      // Le dame possono muoversi e catturare in tutte le direzioni
+      directions = [[-1, -1], [-1, 1], [1, -1], [1, 1]];
+    } else {
+      // Le pedine normali possono catturare solo in avanti e lateralmente
+      // Per il bianco, avanti è -1 (verso l'alto)
+      // Per il nero, avanti è +1 (verso il basso)
+      if (cell.pieceColor === 'white') {
+        directions = [[-1, -1], [-1, 1]]; // Solo in avanti per il bianco
+      } else {
+        directions = [[1, -1], [1, 1]]; // Solo in avanti per il nero
+      }
     }
 
-    // Blocca temporaneamente il polling durante l'invio della mossa
-    const wasCapturing = this.isCapturingMultiple;
-    this.isCapturingMultiple = true;
+    // Controlla ogni direzione per opportunità di cattura
+    directions.forEach(([dr, dc]) => {
+      const captureRow = row + dr;
+      const captureCol = col + dc;
+      const landRow = row + 2 * dr;
+      const landCol = col + 2 * dc;
 
-    this.moveService.saveMove(moveDto, this.gameID).subscribe({
-      next: (response: GameResponse) => {
-        console.log('Mossa inviata con successo:', response);
+      console.log(`Verificando direzione [${dr},${dc}]: posizione cattura [${captureRow},${captureCol}], atterraggio [${landRow},${landCol}]`);
 
-        // Riproduci il suono della mossa
-        if (isCapture) {
-          this.audioService.playCaptureSound();
-        } else {
-          this.audioService.playMoveSound();
-        }
+      // Assicurati che le posizioni siano valide
+      if (!this.isValidPosition(captureRow, captureCol) || !this.isValidPosition(landRow, landCol)) {
+        console.log('Posizioni non valide, fuori dalla scacchiera');
+        return;
+      }
 
-        // Aggiorna lo stato della partita dopo la mossa
-        this.updateGameState(response);
+      const captureCell = this.board[captureRow][captureCol];
+      const landCell = this.board[landRow][landCol];
 
-        if (response.cronologiaMosse) {
-          this.updateMovesFromHistory(response.cronologiaMosse);
-        }
+      console.log(`Cella da catturare: hasPiece=${captureCell.hasPiece}, colore=${captureCell.pieceColor}`);
+      console.log(`Cella di atterraggio: hasPiece=${landCell.hasPiece}`);
 
-        // Gestione della cattura multipla - verifica se siamo ancora noi a giocare
-        if (isCapture && this.isPlayerTurn()) {
-          console.log('Cattura multipla possibile: stesso turno dopo cattura');
-          this.isCapturingMultiple = true;
-
-          // Nella dama italiana, la pedina diventa dama se raggiunge l'ultima riga
-          const becameKing =
-            (!this.board[fromRow][fromCol].isKing &&
-              ((this.playerTeam === 'WHITE' && toRow === 0) ||
-                (this.playerTeam === 'BLACK' && toRow === 7)));
-
-          // Se la pedina è appena diventata dama, non può continuare a catturare
-          if (becameKing) {
-            console.log('Pedina diventata dama: fine del turno');
-            this.waitingForNextCapture = false;
-            this.isCapturingMultiple = false;
-            this.lastCapturePosition = null;
-            this.selectedCell = null;
-            this.highlightedCells = [];
-          } else {
-            // Controlla se ci sono altre mosse di cattura possibili
-            // Ottieni l'informazione aggiornata se la pedina è una dama
-            const updatedCell = response.board[toRow][toCol];
-            const isNowKing = updatedCell === 'W' || updatedCell === 'B';
-
-            const captureMoves = this.findCaptureMoves(
-              toRow, toCol,
-              this.board[toRow][toCol].pieceColor === 'white',
-              isNowKing
-            );
-
-            if (captureMoves.length > 0) {
-              console.log('Altre mosse di cattura disponibili:', captureMoves);
-              // Seleziona automaticamente la pedina per la prossima mossa
-              this.selectedCell = {row: toRow, col: toCol};
-              this.highlightedCells = captureMoves;
-            } else {
-              console.log('Nessuna cattura multipla: fine delle catture possibili');
-              this.waitingForNextCapture = false;
-              this.isCapturingMultiple = false;
-              this.lastCapturePosition = null;
-              this.selectedCell = null;
-              this.highlightedCells = [];
-            }
-          }
-        } else {
-          console.log('Nessuna cattura multipla: turno passato o fine delle catture');
-          this.waitingForNextCapture = false;
-          this.isCapturingMultiple = false;
-          this.lastCapturePosition = null;
-          this.selectedCell = null;
-          this.highlightedCells = [];
-        }
-
-        // Ripristina il polling se necessario
-        setTimeout(() => {
-          if (!this.isCapturingMultiple) {
-            this.fetchGameState();
-          }
-        }, 500);
-      },
-      error: (error) => {
-        console.error('Errore nell\'invio della mossa:', error);
-        this.isCapturingMultiple = wasCapturing;
-        this.waitingForNextCapture = false;
-        this.fetchGameState();
+      // Controlla se c'è un pezzo avversario da catturare e una cella vuota su cui atterrare
+      if (captureCell.hasPiece && captureCell.pieceColor !== cell.pieceColor && !landCell.hasPiece) {
+        console.log('Cattura trovata!');
+        captures.push({
+          from: { row, col },
+          to: { row: landRow, col: landCol },
+          captured: [{ row: captureRow, col: captureCol }]
+        });
       }
     });
+
+    console.log(`Totale catture trovate: ${captures.length}`);
+    return captures;
   }
 
-  // Metodi per lo stile delle celle
-  // Metodo per verificare se una cella appartiene alla classe light o dark
-  // Metodo per verificare se una cella appartiene alla classe light o dark
-  getCellClass(row: number, col: number): string {
-    // Importante: verifica se (row + col) è pari o dispari
-    const isLightSquare = (row + col) % 2 === 0;
+  /**
+   * Executes a move from one position to another
+   * @param fromRow - Starting row
+   * @param fromCol - Starting column
+   * @param toRow - Destination row
+   * @param toCol - Destination column
+   */
+  makeMove(fromRow: number, fromCol: number, toRow: number, toCol: number): void {
+    if (!this.isPlayerTurn()) return;
 
-    // Assegna le classi corrette (white-cell o black-cell)
-    let classes = isLightSquare ? 'white-cell' : 'black-cell';
+    console.log(`Esecuzione mossa da [${fromRow},${fromCol}] a [${toRow},${toCol}]`);
+    
+    const isCapture = Math.abs(fromRow - toRow) === 2 && Math.abs(fromCol - toCol) === 2;
+    console.log(`Questa è una mossa di cattura? ${isCapture}`);
+    
+    const movingPiece = { ...this.board[fromRow][fromCol] };
+    console.log(`Pezzo in movimento: colore=${movingPiece.pieceColor}, re=${movingPiece.isKing}`);
 
-    // Aggiungi classe highlighted-cell se la cella è una mossa valida
-    if (this.isHighlighted(row, col)) {
-      classes += ' highlighted-cell';
+    // Per le catture, rimuoviamo subito il pezzo catturato per feedback visivo
+    if (isCapture) {
+      const capRow = (fromRow + toRow) / 2;
+      const capCol = (fromCol + toCol) / 2;
+      console.log(`Rimozione pezzo catturato in [${capRow},${capCol}]`);
+      
+      const capturedPiece = this.board[capRow][capCol];
+      console.log(`Pezzo catturato: colore=${capturedPiece.pieceColor}, re=${capturedPiece.isKing}`);
+      
+      // Verifica che ci sia effettivamente un pezzo da catturare
+      if (!capturedPiece.hasPiece) {
+        console.error('Errore: non c\'è un pezzo da catturare!');
+        return;
+      }
+      
+      // Verifica che sia un pezzo avversario
+      if (capturedPiece.pieceColor === movingPiece.pieceColor) {
+        console.error('Errore: non puoi catturare i tuoi pezzi!');
+        return;
+      }
+      
+      this.board[capRow][capCol] = { hasPiece: false, pieceColor: null, isKing: false };
+      this.audioService.playCaptureSound();
+    } else {
+      this.audioService.playMoveSound();
     }
 
-    // Aggiungi classe selected-cell se la cella è selezionata
-    if (this.selectedCell && this.selectedCell.row === row && this.selectedCell.col === col) {
-      classes += ' selected-cell';
+    // Sposta il pezzo
+    console.log('Spostamento del pezzo');
+    this.board[fromRow][fromCol] = { hasPiece: false, pieceColor: null, isKing: false };
+    
+    // IMPORTANTE: Verifica se la pedina diventa dama
+    let becomesKing = false;
+    if (!movingPiece.isKing) {
+      if ((movingPiece.pieceColor === 'white' && toRow === 0) || 
+          (movingPiece.pieceColor === 'black' && toRow === 7)) {
+        movingPiece.isKing = true;
+        becomesKing = true;
+        this.audioService.playKingSound();
+        console.log(`Pedina ${movingPiece.pieceColor} promossa a dama!`);
+      }
+    }
+    
+    // Aggiorna la pedina nella nuova posizione
+    this.board[toRow][toCol] = { ...movingPiece };
+
+    // Verifica ulteriori catture DOPO la promozione a dama
+    const further = this.getCapturesForPiece(toRow, toCol);
+    console.log(`Ulteriori catture disponibili: ${further.length}`);
+
+    if (isCapture && further.length > 0) {
+      console.log('Continuazione della catena di cattura');
+      // Inizio o continua la catena di cattura
+      if (!this.captureChainStart) {
+        this.captureChainStart = { row: fromRow, col: fromCol };
+        this.isCapturingMultiple = true;
+      }
+      
+      // Aggiungi questo passo al percorso di cattura
+      if (!this.capturePath) {
+        this.capturePath = [];
+      }
+      this.capturePath.push(`${toRow}${toCol}`);
+      console.log(`Percorso di cattura aggiornato: ${this.capturePath}`);
+      
+      // Aggiungi alla cronologia locale
+      this.moves = [...this.moves, {
+        from: { row: fromRow, col: fromCol },
+        to: { row: toRow, col: toCol },
+        captured: [{ row: (fromRow + toRow) / 2, col: (fromCol + toCol) / 2 }]
+      }];
+      
+      this.selectedCell = { row: toRow, col: toCol };
+      this.highlightedCells = further.map(m => m.to);
+      
+      // Se è diventata dama, aggiorna l'interfaccia
+      if (becomesKing) {
+        // Forza un aggiornamento dell'interfaccia
+        setTimeout(() => {
+          // Questo è un trick per forzare Angular a fare change detection
+          this.board = [...this.board];
+        }, 100);
+      }
+    }
+    else {
+      // Fine catena o mossa semplice → invia al server
+      const start = this.captureChainStart || { row: fromRow, col: fromCol };
+      
+      // Se è una mossa semplice o l'ultima cattura, aggiungi alla cronologia locale
+      if (!isCapture || !this.captureChainStart) {
+        this.moves = [...this.moves, {
+          from: { row: fromRow, col: fromCol },
+          to: { row: toRow, col: toCol },
+          captured: isCapture ? [{ row: (fromRow + toRow) / 2, col: (fromCol + toCol) / 2 }] : undefined
+        }];
+      }
+      
+      // Per l'ultima cattura in una sequenza, aggiungi anche questa posizione al percorso
+      if (isCapture && this.captureChainStart) {
+        this.capturePath.push(`${toRow}${toCol}`);
+      }
+      
+      // Preparazione del payload con path per il server
+      const payload: MoveP = {
+        from: `${start.row}${start.col}`,
+        to: `${toRow}${toCol}`,
+        player: movingPiece.pieceColor!
+      };
+      
+      // Aggiungi il percorso se è una cattura multipla
+      if (this.captureChainStart && this.capturePath && this.capturePath.length > 0) {
+        payload.path = this.capturePath;
+        console.log("Inviando percorso di cattura:", payload.path);
+      }
+
+      this.moveService.saveMove(payload, this.gameID).subscribe({
+        next: res => {
+          // Quando riceviamo la risposta dal server, aggiorniamo lo stato
+          this.updateGameState(res);
+          
+          if (res && (res as any).cronologiaMosse) {
+            this.updateMovesFromHistory((res as any).cronologiaMosse);
+          }
+        },
+        error: err => console.error('Errore salvataggio mossa', err)
+      });
+
+      // Pulisci stato cattura, highlights e percorso
+      this.captureChainStart = null;
+      this.selectedCell = null;
+      this.highlightedCells = [];
+      this.isCapturingMultiple = false;
+      this.capturePath = []; // Reset percorso di cattura
+
+      // Cambia turno e controlla fine partita
+      this.currentPlayer = this.currentPlayer === 'white' ? 'black' : 'white';
+      this.checkGameOver();
+    }
+  }
+
+  private buildCapturePathFromMoves(): string[] {
+    const path: string[] = [];
+    
+    // Filtra solo le mosse dall'inizio della catena multipla
+    const relevantMoves = this.moves.filter((move, index) => {
+      // Trova l'indice dove inizia la catena attuale
+      const startIndex = this.moves.findIndex(m => 
+        m.from.row === this.captureChainStart?.row && 
+        m.from.col === this.captureChainStart?.col
+      );
+      return index >= startIndex;
+    });
+    
+    // Estrai solo le posizioni di destinazione
+    relevantMoves.forEach(move => {
+      path.push(`${move.to.row}${move.to.col}`);
+    });
+    
+    return path;
+  }
+
+  /**
+   * Checks if the game is over and determines the winner
+   */
+  checkGameOver(): void {
+    // Check if a player has no pieces left
+    let whiteCount = 0;
+    let blackCount = 0;
+
+    for (let r = 0; r < 8; r++) {
+      for (let c = 0; c < 8; c++) {
+        const cell = this.board[r][c];
+        if (cell.hasPiece) {
+          if (cell.pieceColor === 'white') whiteCount++;
+          else blackCount++;
+        }
+      }
     }
 
-    return classes;
+    this.whiteCount = whiteCount;
+    this.blackCount = blackCount;
+
+    if (whiteCount === 0) {
+      this.gameOver = true;
+      this.winner = 'black'; // Il nero vince se il bianco non ha pezzi
+      this.showGameOverModal = true;
+      return;
+    }
+
+    if (blackCount === 0) {
+      this.gameOver = true;
+      this.winner = 'white'; // Il bianco vince se il nero non ha pezzi
+      this.showGameOverModal = true;
+      return;
+    }
+
+    // Check if current player has valid moves
+    let hasValidMoves = false;
+    for (let r = 0; r < 8; r++) {
+      for (let c = 0; c < 8; c++) {
+        const cell = this.board[r][c];
+        if (cell.hasPiece && cell.pieceColor === this.currentPlayer) {
+          const moves = this.getValidMoves(r, c);
+          if (moves.length > 0) {
+            // Player has at least one valid move
+            hasValidMoves = true;
+            break;
+          }
+        }
+      }
+      if (hasValidMoves) break;
+    }
+
+    // If current player has no valid moves, they lose
+    if (!hasValidMoves) {
+      this.gameOver = true;
+      this.winner = this.currentPlayer === 'white' ? 'black' : 'white';
+      this.showGameOverModal = true;
+    }
   }
 
-
-
-
-// Metodo per verificare se la partita ha bisogno di un avversario
-  needsOpponent(): boolean {
-    // La partita ha bisogno di un avversario se uno dei nickname è ancora quello di default
-    return this.whitePlayerNickname === 'Giocatore Bianco' ||
-      this.blackPlayerNickname === 'Giocatore Nero';
-  }
-
-// Metodo per copiare il link negli appunti
-  copyToClipboard(gameLink: HTMLInputElement): void {
-    gameLink.select();
-    document.execCommand('copy');
-    this.linkCopied = true;
-
-    // Nascondi il messaggio di conferma dopo 3 secondi
-    setTimeout(() => {
-      this.linkCopied = false;
-    }, 3000);
-  }
-
-// Metodo per nascondere il modale di fine partita
+  /**
+   * Hides the game over modal
+   */
   hideGameOverModal(): void {
     this.showGameOverModal = false;
   }
 
-// Metodo per iniziare una nuova partita
-  resetGame(): void {
-    // Chiudi la modale
-    this.hideGameOverModal();
-
-    // Reindirizza alla pagina principale o di creazione nuova partita
-    window.location.href = this.origin + '/new-game';
+  /**
+   * Verifica se la partita ha bisogno di un secondo giocatore
+   * @returns true se manca un giocatore, false se entrambi i giocatori sono presenti
+   */
+  needsOpponent(): boolean {
+    // La partita ha bisogno di un avversario se ha meno di 2 giocatori
+    return !this.whitePlayerNickname || !this.blackPlayerNickname ||
+          this.whitePlayerNickname === 'Giocatore Bianco' ||
+          this.blackPlayerNickname === 'Giocatore Nero';
   }
-};
+
+  /**
+   * Copia il testo negli appunti
+   * @param inputElement Elemento input contenente il testo da copiare
+   */
+  copyToClipboard(inputElement: HTMLInputElement): void {
+    // Seleziona il testo nell'input
+    inputElement.select();
+    inputElement.setSelectionRange(0, 99999); // Per dispositivi mobili
+
+    // Esegui il comando di copia
+    document.execCommand('copy');
+
+    // Deseleziona il testo
+    inputElement.blur();
+
+    // Mostra il messaggio di conferma
+    this.linkCopied = true;
+
+    // Nascondi il messaggio dopo 2 secondi
+    setTimeout(() => {
+      this.linkCopied = false;
+    }, 2000);
+  }
+
+  /**
+   * Checks if a position is within the board boundaries
+   * @param row - Row index to check
+   * @param col - Column index to check
+   * @returns True if the position is valid
+   */
+  isValidPosition(row: number, col: number): boolean {
+    return row >= 0 && row < 8 && col >= 0 && col < 8;
+  }
+
+  /**
+   * Resets the game to its initial state
+   */
+  resetGame(): void {
+    this.router.navigate(['/play'])
+  }
+
+  // Metodo per avviare l'animazione della cattura
+  startCaptureAnimation(oldBoard: Cell[][], path: string[], onComplete: () => void) {
+    console.log('Avvio animazione cattura lungo il percorso:', path);
+    
+    // Interrompi eventuali animazioni in corso
+    if (this.captureAnimationInterval) {
+      clearInterval(this.captureAnimationInterval);
+      this.captureAnimationInterval = null;
+    }
+    
+    this.isAnimatingCapture = true;
+    this.captureAnimationPath = path.map(pos => ({
+      row: parseInt(pos[0]),
+      col: parseInt(pos[1])
+    }));
+    this.captureAnimationStep = 0;
+    
+    // Copia la scacchiera originale da usare per l'animazione
+    this.board = JSON.parse(JSON.stringify(oldBoard));
+    
+    // Identifica il pezzo che sta catturando
+    const startRow = this.captureAnimationPath[0].row;
+    const startCol = this.captureAnimationPath[0].col;
+    const piece = { ...this.board[startRow][startCol] }; // Crea una copia del pezzo
+    
+    if (!piece.hasPiece) {
+      console.error("Errore: nessun pezzo trovato alla posizione iniziale dell'animazione!");
+      this.isAnimatingCapture = false;
+      onComplete();
+      return;
+    }
+    
+    // Intervallo per l'animazione (sposta il pezzo ogni 500ms)
+    this.captureAnimationInterval = setInterval(() => {
+      if (this.captureAnimationStep < this.captureAnimationPath.length - 1) {
+        // Posizione corrente
+        const current = this.captureAnimationPath[this.captureAnimationStep];
+        // Prossima posizione
+        const next = this.captureAnimationPath[this.captureAnimationStep + 1];
+        
+        // Calcola la posizione del pezzo catturato
+        const capturedRow = (current.row + next.row) / 2;
+        const capturedCol = (current.col + next.col) / 2;
+        
+        // Rimuove il pezzo dalla posizione corrente
+        this.board[current.row][current.col] = { 
+          hasPiece: false, 
+          pieceColor: null, 
+          isKing: false 
+        };
+        
+        // Rimuove il pezzo catturato
+        this.board[capturedRow][capturedCol] = { 
+          hasPiece: false, 
+          pieceColor: null, 
+          isKing: false 
+        };
+        
+        // Verifica se la pedina diventa dama
+        let becameKing = false;
+        if (!piece.isKing) {
+          if ((piece.pieceColor === 'white' && next.row === 0) || 
+              (piece.pieceColor === 'black' && next.row === 7)) {
+            // La pedina diventa dama
+            piece.isKing = true;
+            becameKing = true;
+            
+            // Riproduci suono promozione a dama
+            this.audioService.playKingSound();
+            
+            console.log(`Pedina ${piece.pieceColor} promossa a dama durante l'animazione`);
+          }
+        }
+        
+        // Sposta il pezzo nella nuova posizione
+        this.board[next.row][next.col] = {
+          hasPiece: true,
+          pieceColor: piece.pieceColor,
+          isKing: piece.isKing
+        };
+        
+        // MIGLIORAMENTO: Forza un aggiornamento dell'interfaccia immediatamente
+        // se la pedina è diventata dama, così da mostrare la corona
+        if (becameKing) {
+          // Creiamo una copia della scacchiera per forzare Angular a rilevare la modifica
+          this.board = [...this.board.map(row => [...row])];
+          
+          // In alternativa, possiamo usare il change detector di Angular
+          // ma questo richiede l'injection di ChangeDetectorRef nel costruttore
+          // this.changeDetector.detectChanges();
+        }
+        
+        // Riproduci il suono di cattura
+        this.audioService.playCaptureSound();
+        
+        // Avanza all'animazione successiva
+        this.captureAnimationStep++;
+      } else {
+        // Fine dell'animazione
+        clearInterval(this.captureAnimationInterval);
+        this.captureAnimationInterval = null;
+        this.isAnimatingCapture = false;
+        
+        // Callback per completare l'aggiornamento
+        onComplete();
+      }
+    }, 500); // Ritardo di 500ms tra ogni passo dell'animazione
+  }
+
+
+  protected readonly localStorage = localStorage;
+}
