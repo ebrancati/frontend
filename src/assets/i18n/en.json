@@ -40,7 +40,13 @@
     "WINNER": "The winner is",
     "WHITE": "White",
     "BLACK": "Black",
-    "NEW_GAME": "New Game"
+    "NEW_GAME": "New Game",
+    "REQUEST_REMATCH": "Request Rematch",
+    "CANCEL_REQUEST": "Cancel Request",
+    "BACK_TO_MENU": "Back to Menu",
+    "RESTART_REQUESTED": "Rematch request sent!",
+    "WAITING_FOR_OPPONENT_RESTART": "Waiting for opponent to accept rematch...",
+    "OPPONENT_WANTS_RESTART": "Opponent has requested a rematch!"
   },
   "JOIN": {
     "JOIN_GAME": "Join Game",

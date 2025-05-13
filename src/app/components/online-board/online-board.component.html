@@ -250,10 +250,66 @@
         <div class="close-button" (click)="hideGameOverModal()">✕</div>
         <h2>{{ 'GAME_OVER.TITLE' | translate }}</h2>
         <p>{{ 'GAME_OVER.WINNER' | translate }} <span class="winner-text">{{ winner === 'white' ? ('GAME_OVER.WHITE' | translate) : ('GAME_OVER.BLACK' | translate) }}</span></p>
-        <button class="new-game-button" (click)="resetGame()">{{ 'GAME_OVER.NEW_GAME' | translate }}</button>
+        
+        <!-- Stato di riavvio -->
+        <div *ngIf="restartStatus" class="restart-status mt-3 mb-3">
+          <div class="d-flex justify-content-center gap-3">
+            <!-- Stato giocatore bianco -->
+            <div class="player-restart-status white-player">
+              <span class="player-name">{{ restartStatus.nicknameW }}</span>
+              <span class="restart-icon" [ngClass]="{'ready': restartStatus.restartW}">
+                {{ restartStatus.restartW ? '✓' : '○' }}
+              </span>
+            </div>
+            
+            <!-- Stato giocatore nero -->
+            <div class="player-restart-status black-player">
+              <span class="player-name">{{ restartStatus.nicknameB }}</span>
+              <span class="restart-icon" [ngClass]="{'ready': restartStatus.restartB}">
+                {{ restartStatus.restartB ? '✓' : '○' }}
+              </span>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Messaggi di stato -->
+        <div *ngIf="showRestartRequestedMessage" class="alert alert-success mt-2">
+          {{ 'GAME_OVER.RESTART_REQUESTED' | translate }}
+        </div>
+        
+        <div *ngIf="waitingForOpponentRestart && !hasOpponentRequestedRestart()" class="alert alert-info mt-2">
+          {{ 'GAME_OVER.WAITING_FOR_OPPONENT_RESTART' | translate }}
+        </div>
+        
+        <div *ngIf="hasOpponentRequestedRestart() && !waitingForOpponentRestart" class="alert alert-info mt-2">
+          {{ 'GAME_OVER.OPPONENT_WANTS_RESTART' | translate }}
+        </div>
+        
+        <!-- Pulsanti azione -->
+        <div class="d-flex justify-content-center gap-3 mt-3">
+          <!-- Pulsante Richiedi Rivincita -->
+          <button 
+            *ngIf="!waitingForOpponentRestart && gameID" 
+            class="btn btn-success" 
+            (click)="requestRestart()">
+            {{ 'GAME_OVER.REQUEST_REMATCH' | translate }}
+          </button>
+          
+          <!-- Pulsante Annulla Richiesta -->
+          <button 
+            *ngIf="waitingForOpponentRestart && gameID" 
+            class="btn btn-warning" 
+            (click)="cancelRestartRequest()">
+            {{ 'GAME_OVER.CANCEL_REQUEST' | translate }}
+          </button>
+          
+          <!-- Pulsante Torna al Menu -->
+          <button class="btn btn-secondary" (click)="router.navigate(['/play'])">
+            {{ 'GAME_OVER.BACK_TO_MENU' | translate }}
+          </button>
+        </div>
       </div>
     </div>
-  </div>
 
   <div class="side-panel">
     <app-online-moves [moves]="moves"></app-online-moves>
