@@ -59,7 +59,7 @@ export class OfflineBoardComponent {
     this.initBoard();
   }
 
-  constructor(private audioService: AudioService) {}
+  constructor(public audioService: AudioService) {}
 
   /**
    * Initialize the game board with pieces in starting positions

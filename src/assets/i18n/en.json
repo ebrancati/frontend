@@ -29,6 +29,21 @@
     "WAITING_STATUS": "Waiting",
     "RECENT_MOVES": "Recent Moves"
   },
+  "BOT": {
+    "OPTIONS": "Bot Options",
+    "DIFFICULTY": "Difficulty Level",
+    "EASY": "Easy",
+    "MEDIUM": "Medium",
+    "HARD": "Hard",
+    "YOUR_COLOR": "Your Color",
+    "PLAY_WHITE": "Play as White",
+    "PLAY_BLACK": "Play as Black",
+    "NEW_GAME": "New Game",
+    "THINKING": "Bot is thinking...",
+    "CAPTURING": "Capturing...",
+    "YOU_WON": "You won the game!",
+    "BOT_WON": "The bot won the game!"
+  },
   "MENU": {
     "SELECT_MODE": "Select Game Mode",
     "ONLINE": "Play Online",
