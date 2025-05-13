@@ -59,7 +59,6 @@ export class OfflineBoardComponent {
     this.initBoard();
   }
 
-  // Modifica il costruttore della classe
   constructor(private audioService: AudioService) {}
 
   /**
@@ -128,7 +127,7 @@ export class OfflineBoardComponent {
    * Handles click events on board cells
    * @param row - Row index of the clicked cell
    * @param col - Column index of the clicked cell
-  */
+   */
   onCellClick(row: number, col: number): void {
 
     if (this.gameOver) return;
@@ -273,72 +272,46 @@ export class OfflineBoardComponent {
    */
   // Modifica il metodo makeMove
   makeMove(fromRow: number, fromCol: number, toRow: number, toCol: number): void {
-    const isCapture = Math.abs(fromRow - toRow) === 2;
+    const isCapture = Math.abs(fromRow - toRow) === 2 && Math.abs(fromCol - toCol) === 2;
+
+    // Update the board
     const movingPiece = this.board[fromRow][fromCol];
 
-    // Verifica se diventerà dama
-    const willBecomeKing = !movingPiece.isKing && (
-        (movingPiece.pieceColor === 'white' && toRow === 0) ||
-        (movingPiece.pieceColor === 'black' && toRow === 7)
-    );
-
-    // Gestione cattura
-    if (isCapture) {
-        const captureRow = (fromRow + toRow) / 2;
-        const captureCol = (fromCol + toCol) / 2;
-
-        // Animate the capture
-        const capturedPieceElement = this.getPieceElement(captureRow, captureCol);
-        if (capturedPieceElement) {
-            capturedPieceElement.classList.add('captured');
-
-            // Wait for animation to complete before removing the piece
-            setTimeout(() => {
-                this.board[captureRow][captureCol] = {
-                    hasPiece: false,
-                    pieceColor: null,
-                    isKing: false
-                };
-            }, 400); // Match the animation duration
-        } else {
-            // Fallback if element not found
-            this.board[captureRow][captureCol] = {
-                hasPiece: false,
-                pieceColor: null,
-                isKing: false
-            };
-        }
-
-        this.audioService.playCaptureSound();
-    } else {
-        this.audioService.playMoveSound();
-    }
-
-    // Animate the moving piece
-    const movingPieceElement = this.getPieceElement(fromRow, fromCol);
-    if (movingPieceElement) {
-        movingPieceElement.classList.add('moving');
-    }
-
-    // Sposta il pezzo
+    // Make the move
     this.board[toRow][toCol] = {
-        hasPiece: true,
-        pieceColor: movingPiece.pieceColor,
-        isKing: willBecomeKing || movingPiece.isKing
+      hasPiece: true,
+      pieceColor: movingPiece.pieceColor,
+      isKing: movingPiece.isKing
+    };
+    this.board[fromRow][fromCol] = {
+      hasPiece: false,
+      pieceColor: null,
+      isKing: false
     };
 
-    this.board[fromRow][fromCol] = {
+    // Handle captures
+    let capturedPiece = null;
+    if (isCapture) {
+      // Calcola la posizione della pedina catturata
+      const captureRow = fromRow + (toRow - fromRow) / 2;
+      const captureCol = fromCol + (toCol - fromCol) / 2;
+
+      // Rimuovi il pezzo catturato
+      this.board[captureRow][captureCol] = {
         hasPiece: false,
         pieceColor: null,
         isKing: false
-    };
-
-    // Suono dama
-    if (willBecomeKing) {
-        this.audioService.playKingSound();
+      };
     }
 
-    // ... resto del codice esistente ...
+    // Check for king promotion
+    if (!movingPiece.isKing) {
+      if ((movingPiece.pieceColor === 'white' && toRow === 0) ||
+        (movingPiece.pieceColor === 'black' && toRow === 7)) {
+        this.board[toRow][toCol].isKing = true;
+      }
+    }
+
     // Record the move
     this.moves = [...this.moves, {
       from: { row: fromRow, col: fromCol },
