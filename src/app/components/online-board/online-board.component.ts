@@ -69,6 +69,7 @@ interface Move {
 })
 export class OnlineBoardComponent implements OnInit, OnDestroy {
   private captureChainStart: { row: number; col: number } | null = null;
+  private hasCalledReset = false;
   origin: string | undefined
   board: Cell[][] = [];
   highlightedCells: { row: number, col: number }[] = [];
@@ -143,11 +144,9 @@ export class OnlineBoardComponent implements OnInit, OnDestroy {
     if (this.pollingSubscription) {
       this.pollingSubscription.unsubscribe();
     }
-    
     if (this.restartPollingSubscription) {
       this.restartPollingSubscription.unsubscribe();
     }
-    
     if (this.captureAnimationInterval) {
       clearInterval(this.captureAnimationInterval);
     }
@@ -159,12 +158,12 @@ export class OnlineBoardComponent implements OnInit, OnDestroy {
   startPolling() {
     // Fai subito una chiamata iniziale
     this.fetchGameState();
-    
+
     // Poi inizia il polling ogni 2 secondi
     this.pollingSubscription = interval(2000).subscribe(() => {
       this.fetchGameState();
     });
-    
+
     // Avvia anche il polling dello stato di riavvio
     this.startRestartStatusPolling();
   }
@@ -176,7 +175,7 @@ export class OnlineBoardComponent implements OnInit, OnDestroy {
     this.restartPollingSubscription = interval(3000).subscribe(() => {
       this.fetchRestartStatus();
     });
-    
+
     // Prima chiamata immediata
     this.fetchRestartStatus();
   }
@@ -1169,51 +1168,61 @@ export class OnlineBoardComponent implements OnInit, OnDestroy {
   fetchRestartStatus() {
     if (!this.gameID) return;
 
+    if (this.isResetting) return;
+
     this.restartService.getRestartStatus(this.gameID).subscribe({
       next: (status) => {
         this.restartStatus = status;
-        
+
         // Controlla se il giocatore attuale ha richiesto il riavvio
         if (this.playerTeam === 'WHITE' && status.restartW) {
           this.waitingForOpponentRestart = true;
         } else if (this.playerTeam === 'BLACK' && status.restartB) {
           this.waitingForOpponentRestart = true;
         }
-        
+
+
         // Controlla se entrambi i giocatori hanno richiesto il riavvio
         if (this.restartService.bothPlayersWantRestart(status) && !this.isResetting) {
           console.log("Entrambi i giocatori hanno richiesto il riavvio, procedo con il reset");
           this.isResetting = true;
-          
+
           // Resetta la partita
           this.restartService.resetGame(this.gameID).subscribe({
             next: () => {
+              if (this.restartPollingSubscription) {
+                this.restartPollingSubscription.unsubscribe();
+              }
               console.log("Reset della partita completato lato server");
-              
+
+
+
               // Riproduci suono di reset partita
               this.audioService.playMoveSound();
-              
+
               // Nascondi il modale di fine partita
               this.showGameOverModal = false;
               this.waitingForOpponentRestart = false;
-              
+
               // Reimposta lo stato locale
               this.gameOver = false;
               this.winner = null;
-              
+
               // Reset dello stato locale
               this.resetLocalState();
-              
+
               // Forza un aggiornamento immediato dello stato della partita
               setTimeout(() => {
                 console.log("Forzo l'aggiornamento della partita");
                 this.isResetting = false;
                 this.fetchGameState();
+                this.startRestartStatusPolling();
               }, 1000);
+              this.resetStatusRestart();
             },
             error: (err) => {
               console.error('Errore nel reset della partita:', err);
-              this.isResetting = false;
+               this.isResetting = false;
             }
           });
         } else if (!this.gameOver && !this.isResetting) {
@@ -1225,6 +1234,13 @@ export class OnlineBoardComponent implements OnInit, OnDestroy {
         console.error('Errore nel recupero dello stato di riavvio:', error);
       }
     });
+  }
+
+  resetStatusRestart() {
+    this.restartService.resetPlayerRestart(this.gameID).subscribe(res => {
+      this.waitingForOpponentRestart = false;
+      this.fetchGameState();
+    })
   }
 
   /**
@@ -1241,6 +1257,8 @@ export class OnlineBoardComponent implements OnInit, OnDestroy {
     this.lastAnimatedCaptureId = '';
     this.lastProcessedMoveCount = 0;
     this.isCapturingMultiple = false;
+    this.restartPollingSubscription?.unsubscribe();
+    this.restartPollingSubscription = null;
   }
 
   /**
@@ -1251,20 +1269,20 @@ export class OnlineBoardComponent implements OnInit, OnDestroy {
 
     // Crea una copia dello stato attuale
     let updatedStatus = { ...this.restartStatus };
-    
+
     // Aggiorna lo stato in base al team del giocatore
     if (this.playerTeam === 'WHITE') {
       updatedStatus.restartW = true;
     } else if (this.playerTeam === 'BLACK') {
       updatedStatus.restartB = true;
     }
-    
+
     // Invia l'aggiornamento al server
     this.restartService.updateRestartStatus(updatedStatus).subscribe({
       next: () => {
         this.waitingForOpponentRestart = true;
         this.showRestartRequestedMessage = true;
-        
+
         // Nascondi il messaggio dopo alcuni secondi
         setTimeout(() => {
           this.showRestartRequestedMessage = false;
@@ -1284,14 +1302,14 @@ export class OnlineBoardComponent implements OnInit, OnDestroy {
 
     // Crea una copia dello stato attuale
     let updatedStatus = { ...this.restartStatus };
-    
+
     // Aggiorna lo stato in base al team del giocatore
     if (this.playerTeam === 'WHITE') {
       updatedStatus.restartW = false;
     } else if (this.playerTeam === 'BLACK') {
       updatedStatus.restartB = false;
     }
-    
+
     // Invia l'aggiornamento al server
     this.restartService.updateRestartStatus(updatedStatus).subscribe({
       next: () => {
@@ -1308,13 +1326,13 @@ export class OnlineBoardComponent implements OnInit, OnDestroy {
    */
   hasOpponentRequestedRestart(): boolean {
     if (!this.restartStatus) return false;
-    
+
     if (this.playerTeam === 'WHITE') {
       return this.restartStatus.restartB;
     } else if (this.playerTeam === 'BLACK') {
       return this.restartStatus.restartW;
     }
-    
+
     return false;
   }
 

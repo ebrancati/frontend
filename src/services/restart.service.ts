@@ -98,7 +98,12 @@ export class RestartService {
    * @param status - Stato di riavvio
    * @returns true se entrambi i giocatori vogliono riavviare
    */
-  bothPlayersWantRestart(status: PlayerRestartStatus): boolean {
+  bothPlayersWantRestart(status: PlayerRestartStatus,): boolean {
     return status.restartB && status.restartW;
   }
+
+  resetPlayerRestart(gameId:string) {
+    return this.http.post<PlayerRestartStatus>(`/api/restartStatus/${gameId}/restart`, {});
+  }
+
 }
