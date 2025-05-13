@@ -11,6 +11,7 @@ import {MoveP} from '../../../model/entities/MoveP';
 import {Component, Inject, OnDestroy, OnInit} from '@angular/core';
 import { AudioService } from '../../../services/audio.service';
 import { TranslateModule } from '@ngx-translate/core';
+import { RestartService, PlayerRestartStatus } from '../../../services/restart.service';
 
 export interface PlayerDto {
   id: string;
@@ -108,6 +109,12 @@ export class OnlineBoardComponent implements OnInit, OnDestroy {
   // FERMA IL POLLING QUANDO L'UTENTE STA FACENDO MOSSE MULTIPLE
   isCapturingMultiple: boolean = false;
 
+  restartStatus: PlayerRestartStatus | null = null;
+  restartPollingSubscription: Subscription | null = null;
+  showRestartRequestedMessage: boolean = false;
+  waitingForOpponentRestart: boolean = false;
+  isResetting: boolean = false;
+
   // Proprietà per tenere traccia dello stato di copia del link della partita
   linkCopied: boolean = false;
   protected chatHistory: string='';
@@ -116,8 +123,9 @@ export class OnlineBoardComponent implements OnInit, OnDestroy {
     private moveService: MoveServiceService,
     private gameService: GameService,
     private route: ActivatedRoute,
-    private router: Router,
+    public router: Router,
     private audioService: AudioService,
+    private restartService: RestartService,
     @Inject(DOCUMENT) private document: Document
   ) {
     this.origin = this.document.location.origin;
@@ -135,7 +143,11 @@ export class OnlineBoardComponent implements OnInit, OnDestroy {
     if (this.pollingSubscription) {
       this.pollingSubscription.unsubscribe();
     }
-
+    
+    if (this.restartPollingSubscription) {
+      this.restartPollingSubscription.unsubscribe();
+    }
+    
     if (this.captureAnimationInterval) {
       clearInterval(this.captureAnimationInterval);
     }
@@ -147,11 +159,26 @@ export class OnlineBoardComponent implements OnInit, OnDestroy {
   startPolling() {
     // Fai subito una chiamata iniziale
     this.fetchGameState();
-
+    
     // Poi inizia il polling ogni 2 secondi
     this.pollingSubscription = interval(2000).subscribe(() => {
       this.fetchGameState();
     });
+    
+    // Avvia anche il polling dello stato di riavvio
+    this.startRestartStatusPolling();
+  }
+
+  startRestartStatusPolling() {
+    if (!this.gameID || this.restartPollingSubscription) return;
+
+    // Polling ogni 3 secondi
+    this.restartPollingSubscription = interval(3000).subscribe(() => {
+      this.fetchRestartStatus();
+    });
+    
+    // Prima chiamata immediata
+    this.fetchRestartStatus();
   }
 
   /**
@@ -163,6 +190,14 @@ export class OnlineBoardComponent implements OnInit, OnDestroy {
     this.gameService.getGameState(this.gameID).subscribe({
       next: (response: GameResponse) => {
         console.log("Risposta dal server:", response);
+
+        if (this.gameOver && !response.partitaTerminata) {
+          console.log("La partita è stata resettata, aggiorno lo stato locale");
+          this.gameOver = false;
+          this.winner = null;
+          this.showGameOverModal = false;
+        }
+
         console.log("Players nella risposta:", response.players);
 
         // Log del nickname attuale
@@ -914,13 +949,6 @@ export class OnlineBoardComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Resets the game to its initial state
-   */
-  resetGame(): void {
-    this.router.navigate(['/play'])
-  }
-
-  /**
    * Helper method to get the DOM element for a piece at the specified position
    * @param row - Row index of the piece
    * @param col - Column index of the piece
@@ -1135,6 +1163,173 @@ export class OnlineBoardComponent implements OnInit, OnDestroy {
     }, 500); // Ritardo di 500ms tra ogni passo dell'animazione
   }
 
+  /**
+   * Metodo per recuperare lo stato di riavvio
+   */
+  fetchRestartStatus() {
+    if (!this.gameID) return;
+
+    this.restartService.getRestartStatus(this.gameID).subscribe({
+      next: (status) => {
+        this.restartStatus = status;
+        
+        // Controlla se il giocatore attuale ha richiesto il riavvio
+        if (this.playerTeam === 'WHITE' && status.restartW) {
+          this.waitingForOpponentRestart = true;
+        } else if (this.playerTeam === 'BLACK' && status.restartB) {
+          this.waitingForOpponentRestart = true;
+        }
+        
+        // Controlla se entrambi i giocatori hanno richiesto il riavvio
+        if (this.restartService.bothPlayersWantRestart(status) && !this.isResetting) {
+          console.log("Entrambi i giocatori hanno richiesto il riavvio, procedo con il reset");
+          this.isResetting = true;
+          
+          // Resetta la partita
+          this.restartService.resetGame(this.gameID).subscribe({
+            next: () => {
+              console.log("Reset della partita completato lato server");
+              
+              // Riproduci suono di reset partita
+              this.audioService.playMoveSound();
+              
+              // Nascondi il modale di fine partita
+              this.showGameOverModal = false;
+              this.waitingForOpponentRestart = false;
+              
+              // Reimposta lo stato locale
+              this.gameOver = false;
+              this.winner = null;
+              
+              // Reset dello stato locale
+              this.resetLocalState();
+              
+              // Forza un aggiornamento immediato dello stato della partita
+              setTimeout(() => {
+                console.log("Forzo l'aggiornamento della partita");
+                this.isResetting = false;
+                this.fetchGameState();
+              }, 1000);
+            },
+            error: (err) => {
+              console.error('Errore nel reset della partita:', err);
+              this.isResetting = false;
+            }
+          });
+        } else if (!this.gameOver && !this.isResetting) {
+          // Se la partita è stata resettata da qualcun altro, aggiorna lo stato
+          this.fetchGameState();
+        }
+      },
+      error: (error) => {
+        console.error('Errore nel recupero dello stato di riavvio:', error);
+      }
+    });
+  }
+
+  /**
+   * Metodo per ripristinare lo stato locale della partita
+   */
+  private resetLocalState() {
+    this.selectedCell = null;
+    this.highlightedCells = [];
+    this.moves = [];
+    this.isAnimatingCapture = false;
+    this.captureChainStart = null;
+    this.captureAnimationPath = [];
+    this.capturePath = [];
+    this.lastAnimatedCaptureId = '';
+    this.lastProcessedMoveCount = 0;
+    this.isCapturingMultiple = false;
+  }
+
+  /**
+   * Metodo per richiedere il riavvio
+   */
+  requestRestart() {
+    if (!this.gameID || !this.restartStatus || this.waitingForOpponentRestart) return;
+
+    // Crea una copia dello stato attuale
+    let updatedStatus = { ...this.restartStatus };
+    
+    // Aggiorna lo stato in base al team del giocatore
+    if (this.playerTeam === 'WHITE') {
+      updatedStatus.restartW = true;
+    } else if (this.playerTeam === 'BLACK') {
+      updatedStatus.restartB = true;
+    }
+    
+    // Invia l'aggiornamento al server
+    this.restartService.updateRestartStatus(updatedStatus).subscribe({
+      next: () => {
+        this.waitingForOpponentRestart = true;
+        this.showRestartRequestedMessage = true;
+        
+        // Nascondi il messaggio dopo alcuni secondi
+        setTimeout(() => {
+          this.showRestartRequestedMessage = false;
+        }, 3000);
+      },
+      error: (err) => {
+        console.error('Errore nell\'aggiornamento dello stato di riavvio:', err);
+      }
+    });
+  }
+
+  /**
+   * Metodo per annullare la richiesta di riavvio
+   */
+  cancelRestartRequest() {
+    if (!this.gameID || !this.restartStatus || !this.waitingForOpponentRestart) return;
+
+    // Crea una copia dello stato attuale
+    let updatedStatus = { ...this.restartStatus };
+    
+    // Aggiorna lo stato in base al team del giocatore
+    if (this.playerTeam === 'WHITE') {
+      updatedStatus.restartW = false;
+    } else if (this.playerTeam === 'BLACK') {
+      updatedStatus.restartB = false;
+    }
+    
+    // Invia l'aggiornamento al server
+    this.restartService.updateRestartStatus(updatedStatus).subscribe({
+      next: () => {
+        this.waitingForOpponentRestart = false;
+      },
+      error: (err) => {
+        console.error('Errore nell\'annullamento della richiesta di riavvio:', err);
+      }
+    });
+  }
+
+  /**
+   * Controlla se l'altro giocatore ha richiesto il riavvio
+   */
+  hasOpponentRequestedRestart(): boolean {
+    if (!this.restartStatus) return false;
+    
+    if (this.playerTeam === 'WHITE') {
+      return this.restartStatus.restartB;
+    } else if (this.playerTeam === 'BLACK') {
+      return this.restartStatus.restartW;
+    }
+    
+    return false;
+  }
+
+  /**
+   * Modifica il metodo resetGame per utilizzare il nuovo meccanismo di riavvio
+   */
+  resetGame(): void {
+    // Se la partita è online, richiedi il riavvio
+    if (this.gameID) {
+      this.requestRestart();
+    } else {
+      // Per le partite offline, semplicemente reinizializza la scacchiera
+      this.router.navigate(['/play']);
+    }
+  }
 
   protected readonly localStorage = localStorage;
 }

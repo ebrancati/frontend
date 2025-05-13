@@ -40,7 +40,13 @@
     "WINNER": "Ha vinto il giocatore",
     "WHITE": "Bianco",
     "BLACK": "Nero",
-    "NEW_GAME": "Nuova Partita"
+    "NEW_GAME": "Nuova Partita",
+    "REQUEST_REMATCH": "Richiedi Rivincita",
+    "CANCEL_REQUEST": "Annulla Richiesta",
+    "BACK_TO_MENU": "Torna al Menu",
+    "RESTART_REQUESTED": "Richiesta di rivincita inviata!",
+    "WAITING_FOR_OPPONENT_RESTART": "In attesa che l'avversario accetti la rivincita...",
+    "OPPONENT_WANTS_RESTART": "L'avversario ha richiesto una rivincita!"
   },
   "JOIN": {
     "JOIN_GAME": "Partecipa alla Partita",
