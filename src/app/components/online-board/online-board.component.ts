@@ -1217,8 +1217,14 @@ export class OnlineBoardComponent implements OnInit, OnDestroy {
                 this.isResetting = false;
                 this.fetchGameState();
                 this.startRestartStatusPolling();
+
+                // Aggiungi un ulteriore ritardo prima di resettare lo stato di riavvio
+                // per assicurarsi che entrambi i giocatori abbiano avuto il tempo di transizionare
+                setTimeout(() => {
+                  console.log("Reset dello stato di riavvio dopo la transizione");
+                  this.resetStatusRestart();
+                }, 2000);
               }, 1000);
-              this.resetStatusRestart();
             },
             error: (err) => {
               console.error('Errore nel reset della partita:', err);
