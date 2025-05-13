@@ -1197,6 +1197,7 @@ export class OnlineBoardComponent implements OnInit, OnDestroy {
 
 
 
+
               // Riproduci suono di reset partita
               this.audioService.playMoveSound();
 
