@@ -4,6 +4,8 @@
   padding: 0.5rem 1rem;
 }
 
+a { cursor: pointer; }
+
 .navbar-brand h3 {
   font-family: 'Segoe UI', Tahoma, sans-serif;
   font-weight: 700;
@@ -41,6 +43,7 @@
   position: relative;
   transition: color 0.2s ease-in-out;
   color: #f8f9fa !important;
+  cursor: pointer;
 }
 
 .navbar-nav .nav-link:hover,

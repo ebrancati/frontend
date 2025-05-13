@@ -1,26 +1,28 @@
 <div class="menu-container mt-5">
   <h2>{{ 'MENU.SELECT_MODE' | translate }}</h2>
 
-  <div class="menu-buttons">
-    <button
-      class="menu-button"
-      [class.selected]="selectedMode === 'online'"
-      (click)="selectMode('online')">
-      {{ 'MENU.ONLINE' | translate }} 🌐
-    </button>
-
-    <button
-      class="menu-button"
-      [class.selected]="selectedMode === 'local'"
-      (click)="selectMode('local')">
-      {{ 'MENU.LOCAL' | translate }} 🏠
-    </button>
-
-    <button
-      class="menu-button btn btn-secondary disabled"
-      [class.selected]="selectedMode === 'bot'"
-      (click)="selectMode('bot')">
-      {{ 'MENU.VS_COMPUTER' | translate }} ⛔
-    </button>
+  <div class="container">
+    <div class="row justify-content-center">
+      <div class="btn-group d-flex flex-wrap" role="group">
+        <button
+          class="btn btn-outline-primary col-12 col-sm-4 py-3"
+          [class.active]="selectedMode === 'online'"
+          (click)="selectMode('online')">
+          {{ 'MENU.ONLINE' | translate }} 🌐
+        </button>
+        <button
+          class="btn btn-outline-primary col-12 col-sm-4 py-3"
+          [class.active]="selectedMode === 'local'"
+          (click)="selectMode('local')">
+          {{ 'MENU.LOCAL' | translate }} 🏠
+        </button>
+        <button
+          class="btn btn-outline-primary col-12 col-sm-4 py-3"
+          [class.active]="selectedMode === 'bot'"
+          (click)="selectMode('bot')">
+          {{ 'MENU.VS_COMPUTER' | translate }} 👾
+        </button>
+      </div>
+    </div>
   </div>
 </div>

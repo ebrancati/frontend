@@ -29,6 +29,21 @@
     "WAITING_STATUS": "Attesa",
     "RECENT_MOVES": "Mosse Recenti"
   },
+  "BOT": {
+    "OPTIONS": "Opzioni Bot",
+    "DIFFICULTY": "Livello di Difficoltà",
+    "EASY": "Facile",
+    "MEDIUM": "Medio",
+    "HARD": "Difficile",
+    "YOUR_COLOR": "Il Tuo Colore",
+    "PLAY_WHITE": "Gioca come Bianco",
+    "PLAY_BLACK": "Gioca come Nero",
+    "NEW_GAME": "Nuova Partita",
+    "THINKING": "Il bot sta pensando...",
+    "CAPTURING": "Catturando...",
+    "YOU_WON": "Hai vinto la partita!",
+    "BOT_WON": "Il bot ha vinto la partita!"
+  },
   "MENU": {
     "SELECT_MODE": "Seleziona Modalità di Gioco",
     "ONLINE": "Gioca Online",

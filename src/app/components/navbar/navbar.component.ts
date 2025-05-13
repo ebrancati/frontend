@@ -23,7 +23,7 @@ export class NavbarComponent implements OnInit, OnDestroy {
   private themeSubscription: Subscription;
 
   constructor(
-    private router: Router,
+    public router: Router,
     private languageService: LanguageService,
     private themeService: ThemeService
   ) {

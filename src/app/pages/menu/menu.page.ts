@@ -1,3 +1,4 @@
+// src/app/pages/menu/menu.page.ts
 import { Component } from '@angular/core';
 import { Router } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
@@ -22,8 +23,10 @@ export class MenuPage {
         this.router.navigate(['/login']);
         break;
       case 'local':
-      case 'bot':
         this.router.navigate(['/locale']);
+        break;
+      case 'bot':
+        this.router.navigate(['/vs-bot']);
         break;
     }
 
