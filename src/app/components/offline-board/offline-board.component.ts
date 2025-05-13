@@ -434,7 +434,7 @@ export class OfflineBoardComponent {
    * @param col - Column index of the piece
    * @returns The DOM element for the piece, or null if not found
    */
-  private getPieceElement(row: number, col: number): HTMLElement | null {
+  protected getPieceElement(row: number, col: number): HTMLElement | null {
     // Find the square element at the specified position
     const squares = document.querySelectorAll('.square');
     const index = row * 8 + col;

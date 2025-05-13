@@ -3,22 +3,22 @@
 
   <div class="container">
     <div class="row justify-content-center">
-      <div class="btn-group d-flex flex-wrap" role="group">
+      <div class="btn-group-custom d-flex flex-wrap" role="group">
         <button
-          class="btn btn-outline-primary col-12 col-sm-4 py-3"
-          [class.active]="selectedMode === 'online'"
+          class="menu-button-custom col-12 col-sm-4"
+          [class.selected]="selectedMode === 'online'"
           (click)="selectMode('online')">
           {{ 'MENU.ONLINE' | translate }} 🌐
         </button>
         <button
-          class="btn btn-outline-primary col-12 col-sm-4 py-3"
-          [class.active]="selectedMode === 'local'"
+          class="menu-button-custom col-12 col-sm-4"
+          [class.selected]="selectedMode === 'local'"
           (click)="selectMode('local')">
           {{ 'MENU.LOCAL' | translate }} 🏠
         </button>
         <button
-          class="btn btn-outline-primary col-12 col-sm-4 py-3"
-          [class.active]="selectedMode === 'bot'"
+          class="menu-button-custom col-12 col-sm-4"
+          [class.selected]="selectedMode === 'bot'"
           (click)="selectMode('bot')">
           {{ 'MENU.VS_COMPUTER' | translate }} 👾
         </button>

@@ -1,59 +1,115 @@
-# Frontend
+# OnlineCheckers.org - Frontend
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 19.2.10.
+This is the frontend component of OnlineCheckers.org, a web application that allows users to play Italian Checkers online against other players or against a bot.
 
-## Development server
+## Technologies
 
-To start a local development server, run:
+- Angular 17+ (Standalone Components)
+- Bootstrap 5
+- ngx-translate for internationalization
+
+## Prerequisites
+
+Before you begin, ensure you have the following installed:
+
+- Node.js (v18 or later)
+- npm (v9 or later)
+- Angular CLI (`npm install -g @angular/cli`)
+- Git
+
+## Getting Started
+
+### 1. Clone the repository
+
+```bash
+git clone https://github.com/yourusername/online-checkers.git
+cd online-checkers/frontend
+```
+
+### 2. Install dependencies
+
+```bash
+npm install
+```
+
+### 3. Configure the environment
+
+Edit `src/environments/environment.ts` for development configuration:
+
+```typescript
+export const environment = {
+  production: false,
+  apiUrl: 'http://localhost:8080'
+};
+```
+
+### 4. Run the development server
 
 ```bash
 ng serve
 ```
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+Navigate to `http://localhost:4200/`. The app will automatically reload if you change any of the source files.
 
-## Code scaffolding
+## Project Structure
 
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+- **src/app/components/** - Reusable UI components (board, chat, moves, etc.)
+- **src/app/pages/** - Page components (menu, game pages, rules, etc.)
+- **src/services/** - Services for API communication and state management
+- **src/model/entities/** - Data models
+- **src/assets/i18n/** - Translation files (English, Italian)
+- **src/styles/** - Global styles and theme variables
+
+## Game Features
+
+- **Play Modes**:
+  - Local Play (on the same device)
+  - Online Play against other players
+  - Play against the computer (bot with 3 difficulty levels)
+- **Game Rules**: Italian Checkers ruleset
+- **UI Features**:
+  - Board visualization with coordinates
+  - Move history
+  - In-game chat
+  - Game sharing
+  - Rematch feature
+- **Customization**:
+  - Language selection (English, Italian)
+  - Light/Dark theme
+
+## Building for Production
 
 ```bash
-ng generate component component-name
+ng build --configuration=production
 ```
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+The build artifacts will be stored in the `dist/` directory.
 
-```bash
-ng generate --help
-```
-
-## Building
-
-To build the project run:
-
-```bash
-ng build
-```
-
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
-
-## Running unit tests
-
-To execute unit tests with the [Karma](https://karma-runner.github.io) test runner, use the following command:
+## Running Tests
 
 ```bash
 ng test
 ```
 
-## Running end-to-end tests
+## Contributing
 
-For end-to-end (e2e) testing, run:
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
-```bash
-ng e2e
-```
+### Development Guidelines
 
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
+- Follow the Angular style guide
+- Write meaningful commit messages
+- Maintain code documentation
+- Ensure components are responsive
+- Support both light and dark themes
+- Support both English and Italian languages
+- Ensure all new features work on mobile devices
 
-## Additional Resources
+## License
 
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+To the extent possible under law, this work is dedicated to the public domain worldwide. 
+http://creativecommons.org/publicdomain/zero/1.0/
