@@ -1,26 +1,26 @@
 <div class="menu-container mt-5">
-  <h2>Seleziona Modalità di Gioco</h2>
+  <h2>{{ 'MENU.SELECT_MODE' | translate }}</h2>
 
   <div class="menu-buttons">
     <button
       class="menu-button"
       [class.selected]="selectedMode === 'online'"
       (click)="selectMode('online')">
-      Gioca Online 🌐
+      {{ 'MENU.ONLINE' | translate }} 🌐
     </button>
 
     <button
       class="menu-button"
       [class.selected]="selectedMode === 'local'"
       (click)="selectMode('local')">
-      Gioca in Locale 🏠
+      {{ 'MENU.LOCAL' | translate }} 🏠
     </button>
 
     <button
       class="menu-button btn btn-secondary disabled"
       [class.selected]="selectedMode === 'bot'"
       (click)="selectMode('bot')">
-      Gioca contro il Computer ⛔
+      {{ 'MENU.VS_COMPUTER' | translate }} ⛔
     </button>
   </div>
 </div>
