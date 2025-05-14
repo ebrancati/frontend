@@ -7,7 +7,8 @@
     "COPY": "Copy",
     "COPY_SUCCESS": "Link copied to clipboard!",
     "SHARE_GAME": "Share this game",
-    "SHARE_LINK": "Share this link with your opponent:"
+    "SHARE_LINK": "Share this link with your opponent:",
+    "LOADING": "Loading..."
   },
   "LOGIN": {
     "YOUR_NICKNAME": "Your Nickname:",
@@ -27,7 +28,9 @@
     "PIECES": "Pieces",
     "TURN": "Turn",
     "WAITING_STATUS": "Waiting",
-    "RECENT_MOVES": "Recent Moves"
+    "RECENT_MOVES": "Recent Moves",
+    "WHITE_TURN_ERROR": "It's White's turn!",
+    "BLACK_TURN_ERROR": "It's Black's turn!"
   },
   "BOT": {
     "OPTIONS": "Bot Options",
@@ -42,7 +45,9 @@
     "THINKING": "Bot is thinking...",
     "CAPTURING": "Capturing...",
     "YOU_WON": "You won the game!",
-    "BOT_WON": "The bot won the game!"
+    "BOT_WON": "The bot won the game!",
+    "YOUR_TURN_ERROR": "It's your turn!",
+    "BOT_TURN_ERROR": "It's the bot's turn! Please wait for its move..."
   },
   "MENU": {
     "SELECT_MODE": "Select Game Mode",
@@ -79,29 +84,39 @@
   },
   "FOOTER": {
     "COPYRIGHT": "© {{year}} OnlineCheckers.org",
-    "OUR_TEAM": "Our Team",
+    "OUR_TEAM": "Contacts",
     "TAGLINE": "Play checkers online with friends or against the computer."
   },
   "RULES": {
-    "TITLE": "Italian Checkers - Rules and How to Play",
-    "INTRODUCTION": "Italian Checkers is a traditional variant of the game of checkers, played on an 8x8 board with 12 pieces per player. It is the official version regulated by the Italian Checkers Federation (FID) and played in tournaments in Italy.",
-    "INTRO_TEXT": "With unique rules that distinguish it from other European variants, Italian Checkers has a long tradition in Italian culture.",
-    "HISTORY_TITLE": "History of Italian Checkers",
-    "HISTORY_TEXT_1": "Italian Checkers has a rich history that intertwines with Italian culture through the centuries.",
-    "HISTORY_TEXT_2": "The first documented traces date back to the 15th century, when variants of the game were already widespread in Italian Renaissance courts.",
-    "HISTORY_TEXT_3": "During the Risorgimento period, the game became a popular pastime in cafes and clubs, places of meeting and discussion.",
-    "HISTORY_TEXT_4": "In 1924, with the founding of the Italian Checkers Federation (FID), the game acquired standardized rules and official recognition.",
+    "TITLE": "English Checkers - Rules and How to Play",
+    "INTRODUCTION": "English Checkers is a traditional board game played on an 8x8 board with 12 pieces per player. It is one of the most widely played variants of checkers around the world.",
+    "INTRO_TEXT": "Simple to learn but full of strategy, English Checkers has been a beloved pastime in English-speaking countries for generations.",
+    "HISTORY_TITLE": "History of English Checkers",
+    "HISTORY_TEXT_1": "English Checkers has a long history dating back to medieval times in England and other parts of Europe.",
+    "HISTORY_TEXT_2": "The first book on the game was published in 1756 by William Payne, titled 'An Introduction to the Game of Draughts'.",
+    "HISTORY_TEXT_3": "The game's popularity spread throughout the British Empire and became particularly established in the United States, where it is commonly known as 'Checkers'.",
+    "HISTORY_TEXT_4": "In 1847, the first world championship of checkers was held, establishing the game as a serious competitive pursuit.",
     "BOARD_TITLE": "The Board",
-    "BOARD_TEXT_1": "Italian Checkers is played on a traditional 8x8 chessboard with 64 squares, using only the 32 dark squares.",
-    "BOARD_TEXT_2": "At the beginning of the game, each player arranges their 12 pieces on the dark squares of the first three rows in front of them.",
+    "BOARD_TEXT_1": "English Checkers is played on a standard 8x8 chessboard with 64 squares, using only the 32 dark squares.",
+    "BOARD_TEXT_2": "Each player begins with 12 pieces placed on the dark squares of the first three rows closest to them.",
     "MOVEMENT_TITLE": "Movement and Capture",
     "MOVEMENT_TEXT_1": "Pieces move diagonally forward one square at a time. They cannot move backward until they become kings.",
-    "MOVEMENT_TEXT_2": "Capture occurs by jumping over an opponent's piece to an empty square. The jumped piece is removed from the game.",
-    "MOVEMENT_TEXT_3": "If after a capture it is possible to make further captures, the player must continue the sequence with the same piece until no further captures are possible.",
-    "MOVEMENT_TEXT_4": "When multiple capture sequences are possible, it is mandatory to choose the one that captures the greatest number of pieces. In case of a tie, the sequence that captures more kings must be preferred.",
+    "MOVEMENT_TEXT_2": "Capture occurs by jumping over an opponent's piece to an empty square directly beyond. The jumped piece is removed from the board.",
+    "MOVEMENT_TEXT_3": "If after a capture it is possible to make further captures, the player must continue the sequence with the same piece until no further captures are possible (multiple jumps).",
+    "MOVEMENT_TEXT_4": "If a player has the opportunity to capture, they must do so. If multiple capture sequences are available, the player may choose any valid capture sequence, regardless of how many pieces are captured.",
     "KINGS_TITLE": "The Kings",
-    "KINGS_TEXT_1": "A piece becomes a king when it reaches the last row of the opponent's side of the board. It is marked by doubling the piece.",
-    "KINGS_TEXT_2": "Unlike the international variant, in Italian Checkers a king can move only one square diagonally in any direction (forward or backward).",
-    "KINGS_TEXT_3": "A king captures like a normal piece, moving only one square beyond the captured piece, but it can do so in all diagonal directions."
+    "KINGS_TEXT_1": "A piece becomes a king when it reaches the last row on the opponent's side of the board. It is usually crowned by placing a second piece on top of it.",
+    "KINGS_TEXT_2": "A king can move diagonally both forward and backward, but still moves only one square at a time except when capturing.",
+    "KINGS_TEXT_3": "Kings capture in the same way as regular pieces, but can do so in all four diagonal directions. Like regular pieces, kings must make all available captures."
+  },
+  "ERRORS": {
+    "GAME_NOT_FOUND": "The game you're trying to join doesn't exist.",
+    "GAME_FULL": "This game already has two players and cannot accept more participants.",
+    "SELF_PLAY_NOT_ALLOWED": "You cannot play against yourself in online mode. Please use the 'Play Locally' option from the main menu.",
+    "SERVER_ERROR": "An error occurred while connecting to the server. Please try again later.",
+    "JOIN_FAILED": "Failed to join the game. Please try again.",
+    "UNKNOWN_ERROR": "An unknown error occurred. Please try again later.",
+    "GO_TO_LOCAL_MODE": "Go to Local Mode",
+    "CREATE_NEW_GAME": "Create New Game"
   }
 }

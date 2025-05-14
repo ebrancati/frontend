@@ -57,6 +57,13 @@
             [disabled]="newGameForm.invalid"
           >
             {{ 'LOGIN.PLAY' | translate }}
+
+                        
+            <!-- Spinner di caricamento -->
+            <span *ngIf="isLoading" class="d-flex align-items-center justify-content-center">
+              <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+              {{ 'COMMON.LOADING' | translate }}
+            </span>
           </button>
         </div>
       </form>

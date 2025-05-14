@@ -38,88 +38,64 @@ export class OfflineMovesComponent implements OnChanges {
 
     if (this.moves.length === 0) return;
 
-    let currentTurn = 1;
-    let currentMove = 0;
-    let isWhiteTurn = true; // Bianco inizia sempre
+    // Struttura delle mosse organizate per turno
+    const organizedMoves: TurnMoves[] = [];
+    let currentTurn: TurnMoves = { number: 1, white: [], black: [] };
+    let isWhiteTurn = true;
+    let lastPosition: { row: number, col: number } | null = null;
 
-    // Inizializza primo turno
-    this.displayMoves.push({
-      number: currentTurn,
-      white: [],
-      black: []
-    });
-
-    // Analizziamo le mosse per organizzarle in turni bianco/nero
-    while (currentMove < this.moves.length) {
-      const currentTurnData = this.displayMoves[this.displayMoves.length - 1];
-
-      // Gestione mossa bianca
+    // Processa tutte le mosse
+    for (let i = 0; i < this.moves.length; i++) {
+      const move = this.moves[i];
+      
+      // Verifica se è una cattura multipla
+      const isMultiCapture = lastPosition !== null && 
+                            move.from.row === lastPosition.row && 
+                            move.from.col === lastPosition.col;
+      
+      // Formatta la mossa
+      const formattedMove: FormattedMove = {
+        notation: isMultiCapture ? 
+                  this.formatCaptureChain(move) : 
+                  this.formatMove(move),
+        isCaptureContinuation: isMultiCapture
+      };
+      
+      // Aggiungi la mossa al turno corrente
       if (isWhiteTurn) {
-        // Prima mossa bianca in questo turno
-        const move = this.moves[currentMove];
-        const formattedMove = {
-          notation: this.formatMove(move),
-          isCaptureContinuation: false
-        };
-
-        currentTurnData.white.push(formattedMove);
-        currentMove++;
-
-        // Controlliamo se ci sono catture multiple da parte del bianco
-        while (currentMove < this.moves.length &&
-               this.isFollowUpCapture(this.moves[currentMove-1], this.moves[currentMove])) {
-          const captureMove = this.moves[currentMove];
-          const formattedCapture = {
-            notation: this.formatCaptureChain(captureMove),
-            isCaptureContinuation: true
-          };
-
-          currentTurnData.white.push(formattedCapture);
-          currentMove++;
+        currentTurn.white.push(formattedMove);
+        
+        // Se non è una cattura multipla o è l'ultima mossa, passa al nero
+        if (!move.captured || 
+            i === this.moves.length - 1 || 
+            this.moves[i+1].from.row !== move.to.row || 
+            this.moves[i+1].from.col !== move.to.col) {
+          isWhiteTurn = false;
         }
-
-        isWhiteTurn = false;
-      }
-      // Gestione mossa nera
-      else {
-        if (currentMove < this.moves.length) {
-          // Mossa nera
-          const move = this.moves[currentMove];
-          const formattedMove = {
-            notation: this.formatMove(move),
-            isCaptureContinuation: false
-          };
-
-          currentTurnData.black.push(formattedMove);
-          currentMove++;
-
-          // Controlliamo se ci sono catture multiple da parte del nero
-          while (currentMove < this.moves.length &&
-                 this.isFollowUpCapture(this.moves[currentMove-1], this.moves[currentMove])) {
-            const captureMove = this.moves[currentMove];
-            const formattedCapture = {
-              notation: this.formatCaptureChain(captureMove),
-              isCaptureContinuation: true
-            };
-
-            currentTurnData.black.push(formattedCapture);
-            currentMove++;
-          }
-        }
-
-        isWhiteTurn = true;
-        currentTurn++;
-
-        // Prepara il prossimo turno se ci sono altre mosse
-        if (currentMove < this.moves.length) {
-          this.displayMoves.push({
-            number: currentTurn,
-            white: [],
-            black: []
-          });
+      } else {
+        currentTurn.black.push(formattedMove);
+        
+        // Se non è una cattura multipla o è l'ultima mossa, passa al bianco e inizia un nuovo turno
+        if (!move.captured || 
+            i === this.moves.length - 1 || 
+            this.moves[i+1].from.row !== move.to.row || 
+            this.moves[i+1].from.col !== move.to.col) {
+          isWhiteTurn = true;
+          organizedMoves.push(currentTurn);
+          currentTurn = { number: currentTurn.number + 1, white: [], black: [] };
         }
       }
+      
+      // Aggiorna l'ultima posizione per rilevare catture multiple
+      lastPosition = move.to;
     }
+    
+    // Aggiungi l'ultimo turno se non è vuoto
+    if (currentTurn.white.length > 0 || currentTurn.black.length > 0) {
+      organizedMoves.push(currentTurn);
+    }
+    
+    this.displayMoves = organizedMoves;
   }
 
   /**
@@ -128,15 +104,6 @@ export class OfflineMovesComponent implements OnChanges {
   getRowSpan(turn: TurnMoves): number {
     // Calcola il numero massimo di mosse tra bianco e nero
     return Math.max(turn.white.length, turn.black.length);
-  }
-
-  /**
-   * Controlla se una mossa è la continuazione di una cattura multipla
-   */
-  private isFollowUpCapture(prevMove: Move, currentMove: Move): boolean {
-    return prevMove.to.row === currentMove.from.row &&
-           prevMove.to.col === currentMove.from.col &&
-           !!currentMove.captured;
   }
 
   /**

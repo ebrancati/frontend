@@ -72,6 +72,8 @@
                     'dark': !isLight(r, c),
                     'highlight': isHighlight(r, c),
                     'selected': isSelected(r, c),
+                    'has-moves': hasAvailableMoves(r, c),
+                    'no-moves': hasNoAvailableMoves(r, c),
                     'droppable': isHighlight(r, c)
                   }"
                   (click)="onCellClick(r, c)"
@@ -145,6 +147,8 @@
                     'dark': !isLight(r, c),
                     'highlight': isHighlight(r, c),
                     'selected': isSelected(r, c),
+                    'has-moves': hasAvailableMoves(r, c),
+                    'no-moves': hasNoAvailableMoves(r, c),
                     'droppable': isHighlight(r, c)
                   }"
                   (click)="onCellClick(r, c)"
@@ -271,7 +275,6 @@
             </div>
           </div>
         </div>
-
         <!-- Messaggi di stato -->
         <div *ngIf="showRestartRequestedMessage" class="alert alert-success mt-2">
           {{ 'GAME_OVER.RESTART_REQUESTED' | translate }}

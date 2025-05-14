@@ -3,7 +3,7 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { OfflineBoardComponent } from '../offline-board/offline-board.component';
 import { BotService } from '../../../services/bot.service';
 import { AudioService } from '../../../services/audio.service';
-import { TranslateModule } from '@ngx-translate/core';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { CommonModule } from '@angular/common';
 import { OfflineMovesComponent } from '../offline-moves/offline-moves.component';
 
@@ -36,9 +36,10 @@ export class BotBoardComponent extends OfflineBoardComponent implements OnInit, 
 
   constructor(
     private botService: BotService,
-    audioService: AudioService
+    audioService: AudioService,
+    translate: TranslateService
   ) {
-    super(audioService);
+    super(audioService, translate);
   }
 
   override ngOnInit() {
@@ -50,17 +51,23 @@ export class BotBoardComponent extends OfflineBoardComponent implements OnInit, 
     }
   }
 
-  ngOnDestroy() {
+  override ngOnDestroy() {
     // Pulisci eventuali interval quando il componente viene distrutto
     if (this.captureAnimationInterval) {
       clearInterval(this.captureAnimationInterval);
       this.captureAnimationInterval = null;
     }
+    
+    // Chiama il metodo della classe base
+    super.ngOnDestroy();
   }
 
-  // Override del metodo makeMove per aggiungere la logica del bot
+  /**
+   * Override del metodo makeMove per aggiungere la logica del bot
+   */
   override makeMove(fromRow: number, fromCol: number, toRow: number, toCol: number): void {
-    // Prima esegui la mossa del giocatore normalmente
+
+    // Poi esegui la mossa normalmente
     super.makeMove(fromRow, fromCol, toRow, toCol);
 
     // Se dopo la mossa del giocatore è il turno del bot e la partita non è finita
@@ -102,6 +109,11 @@ export class BotBoardComponent extends OfflineBoardComponent implements OnInit, 
         // Esegui la mossa del bot
         if (response.path && response.path.length > 0) {
           // Gestisci cattura multipla con animazione
+          this.moves = [...this.moves, {
+            from: { row: fromRow, col: fromCol },
+            to: { row: toRow, col: toCol },
+            captured: [{ row: fromRow + (toRow - fromRow) / 2, col: fromCol + (toCol - fromCol) / 2 }]
+          }];
           this.animateBotCapturePath(fromRow, fromCol, response.path);
         } else {
           // Mossa semplice
@@ -340,5 +352,31 @@ export class BotBoardComponent extends OfflineBoardComponent implements OnInit, 
 
     // Altrimenti procedi normalmente
     super.onDragEnd(event);
+  }
+
+  /**
+   * Sovrascrivi il metodo per mostrare un messaggio di errore personalizzato
+   * per la modalità di gioco contro il bot
+   */
+  override showTurnErrorMessage(): void {
+    // Cancella il timer precedente se esiste
+    if (this.errorMessageTimeout) {
+      clearTimeout(this.errorMessageTimeout);
+    }
+    
+    // Usa chiavi di traduzione specifiche per il bot
+    const key = this.currentPlayer === this.playerColor ? 
+      'BOT.YOUR_TURN_ERROR' : 
+      'BOT.BOT_TURN_ERROR';
+      
+    this.translate.get(key).subscribe((message: string) => {
+      this.errorMessage = message;
+      this.showErrorMessage = true;
+    });
+    
+    this.errorMessageTimeout = setTimeout(() => {
+      this.showErrorMessage = false;
+      this.errorMessage = null;
+    }, 3000);
   }
 }

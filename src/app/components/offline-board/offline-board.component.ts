@@ -1,8 +1,8 @@
-import { Component } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { NgClass, NgForOf, NgIf } from '@angular/common';
 import { OfflineMovesComponent as MovesComponent } from '../offline-moves/offline-moves.component';
 import { AudioService } from '../../../services/audio.service';
-import { TranslateModule } from '@ngx-translate/core';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 
 /**
  * Interface representing a cell on the checkers board
@@ -35,12 +35,20 @@ interface Move {
   styleUrl: './offline-board.component.css',
   standalone: true
 })
-export class OfflineBoardComponent {
+export class OfflineBoardComponent implements OnInit, OnDestroy {
   board: Cell[][] = [];
   highlightedCells: { row: number, col: number }[] = [];
   selectedCell: { row: number, col: number } | null = null;
   currentPlayer: 'black' | 'white' = 'white';
   moves: Move[] = [];
+
+  piecesWithMoves: { row: number, col: number }[] = [];
+  piecesWithoutMoves: { row: number, col: number }[] = [];
+
+  // Proprietà per il messaggio di errore
+  errorMessage: string | null = null;
+  showErrorMessage: boolean = false;
+  errorMessageTimeout: any = null;
 
   gameOver: boolean = false;
   showGameOverModal: boolean = false;
@@ -59,7 +67,17 @@ export class OfflineBoardComponent {
     this.initBoard();
   }
 
-  constructor(public audioService: AudioService) {}
+  ngOnDestroy() {
+    // Pulizia del timeout quando il componente viene distrutto
+    if (this.errorMessageTimeout) {
+      clearTimeout(this.errorMessageTimeout);
+    }
+  }
+
+  constructor(
+    public audioService: AudioService,
+    public translate: TranslateService
+  ) {}
 
   /**
    * Initialize the game board with pieces in starting positions
@@ -129,22 +147,34 @@ export class OfflineBoardComponent {
    * @param col - Column index of the clicked cell
    */
   onCellClick(row: number, col: number): void {
-
     if (this.gameOver) return;
 
     const cell = this.board[row][col];
 
     // If a highlighted cell is clicked, it means making a move
     if (this.isHighlight(row, col) && this.selectedCell) {
+      // Reset indicators before making move
+      this.resetMoveIndicators();
+      
       this.makeMove(this.selectedCell.row, this.selectedCell.col, row, col);
       return;
     }
 
     // Clear previous highlights if clicking on a new cell
     this.highlightedCells = [];
+    
+    // Reset any previous move indicators
+    this.resetMoveIndicators();
 
-    // If the cell has no piece or it's not the current player's piece, do nothing
-    if (!cell.hasPiece || cell.pieceColor !== this.currentPlayer) {
+    // If the cell has no piece, do nothing
+    if (!cell.hasPiece) {
+      this.selectedCell = null;
+      return;
+    }
+    
+    // Se il giocatore clicca una pedina che non è del suo turno, mostra un messaggio
+    if (cell.pieceColor !== this.currentPlayer) {
+      this.showTurnErrorMessage();
       this.selectedCell = null;
       return;
     }
@@ -152,7 +182,17 @@ export class OfflineBoardComponent {
     this.selectedCell = { row, col };
 
     // Get and show all possible moves
-    this.highlightedCells = this.getValidMoves(row, col);
+    const validMoves = this.getValidMoves(row, col);
+    this.highlightedCells = validMoves;
+    
+    // Check if this piece has moves or not
+    if (validMoves.length > 0) {
+      // Add to pieces with moves
+      this.piecesWithMoves.push({ row, col });
+    } else {
+      // Add to pieces without moves
+      this.piecesWithoutMoves.push({ row, col });
+    }
   }
 
   /**
@@ -272,6 +312,9 @@ export class OfflineBoardComponent {
    */
   // Modifica il metodo makeMove
   makeMove(fromRow: number, fromCol: number, toRow: number, toCol: number): void {
+    console.log("test")
+    this.resetMoveIndicators();
+    
     const isCapture = Math.abs(fromRow - toRow) === 2 && Math.abs(fromCol - toCol) === 2;
 
     // Update the board
@@ -341,6 +384,36 @@ export class OfflineBoardComponent {
       // Check for game over
       this.checkGameOver();
     }
+
+    this.resetMoveIndicators();
+  }
+
+  /**
+   * Determina se una cella ha un pezzo con mosse disponibili
+   * @param row - Indice della riga della cella
+   * @param col - Indice della colonna della cella
+   * @returns True se la cella ha un pezzo con mosse disponibili
+   */
+  hasAvailableMoves(row: number, col: number): boolean {
+    return this.piecesWithMoves.some(piece => piece.row === row && piece.col === col);
+  }
+
+  /**
+   * Determina se una cella ha un pezzo senza mosse disponibili
+   * @param row - Indice della riga della cella
+   * @param col - Indice della colonna della cella
+   * @returns True se la cella ha un pezzo senza mosse disponibili
+   */
+  hasNoAvailableMoves(row: number, col: number): boolean {
+    return this.piecesWithoutMoves.some(piece => piece.row === row && piece.col === col);
+  }
+
+  /**
+   * Resetta gli indicatori di movimento
+   */
+  resetMoveIndicators(): void {
+    this.piecesWithMoves = [];
+    this.piecesWithoutMoves = [];
   }
 
   /**
@@ -532,5 +605,30 @@ export class OfflineBoardComponent {
     // Reset drag state
     this.draggedPiece = null;
     this.dragOverCell = null;
+  }
+
+  /**
+   * Metodo per mostrare il messaggio di errore quando non è il turno corretto
+   */
+  showTurnErrorMessage(): void {
+    // Cancella il timer precedente se esiste
+    if (this.errorMessageTimeout) {
+      clearTimeout(this.errorMessageTimeout);
+    }
+    
+    // Usa TranslateService per ottenere il messaggio tradotto
+    const key = this.currentPlayer === 'white' ? 
+      'GAME.WHITE_TURN_ERROR' : 
+      'GAME.BLACK_TURN_ERROR';
+      
+    this.translate.get(key).subscribe((message: string) => {
+      this.errorMessage = message;
+      this.showErrorMessage = true;
+    });
+    
+    this.errorMessageTimeout = setTimeout(() => {
+      this.showErrorMessage = false;
+      this.errorMessage = null;
+    }, 3000);
   }
 }
