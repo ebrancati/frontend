@@ -46,8 +46,6 @@
 }
 
 .move-continuation {
-  font-style: italic;
-  color: var(--player-secondary-text);
   padding-left: 8px;
 }
 

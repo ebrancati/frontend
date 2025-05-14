@@ -9,6 +9,14 @@
       <p>{{ 'BOT.THINKING' | translate }}</p>
     </div>
 
+    <!-- Messaggio di errore per turno sbagliato -->
+    <div *ngIf="showErrorMessage" class="error-message">
+      <div class="error-content">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+        {{ errorMessage }}
+      </div>
+    </div>
+
     <!-- Scacchiera (riutilizza il template della OfflineBoardComponent) -->
     <div class="board-container">
       <!-- Modale per il game over -->
@@ -52,6 +60,8 @@
                      'dark': !isLight(r, c),
                      'highlight': isHighlight(r, c),
                      'selected': isSelected(r, c),
+                     'has-moves': hasAvailableMoves(r, c),
+                     'no-moves': hasNoAvailableMoves(r, c),
                      'drag-over': dragOverCell && dragOverCell.row === r && dragOverCell.col === c
                    }"
                    (click)="onCellClick(r, c)"
@@ -107,25 +117,6 @@
             </button>
           </div>
         </div>
-
-        <!-- Selezione colore
-        <div class="mb-3">
-            <label class="form-label">{{ 'BOT.YOUR_COLOR' | translate }}</label>
-            <div class="btn-group w-100">
-            <button
-                (click)="setColors('black')"
-                [class.active]="botColor === 'black'"
-                class="btn btn-outline-dark">
-                {{ 'BOT.PLAY_WHITE' | translate }}
-            </button>
-            <button
-                (click)="setColors('white')"
-                [class.active]="botColor === 'white'"
-                class="btn btn-outline-light text-dark">
-                {{ 'BOT.PLAY_BLACK' | translate }}
-            </button>
-            </div>
-        </div> -->
 
         <!-- Bottone nuova partita -->
         <button (click)="resetGame()" class="btn-new-game w-100">

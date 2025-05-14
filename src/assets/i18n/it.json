@@ -7,7 +7,8 @@
     "COPY": "Copia",
     "COPY_SUCCESS": "Link copiato negli appunti!",
     "SHARE_GAME": "Condividi questa partita",
-    "SHARE_LINK": "Condividi questo link con il tuo avversario:"
+    "SHARE_LINK": "Condividi questo link con il tuo avversario:",
+    "LOADING": "Caricamento..."
   },
   "LOGIN": {
     "YOUR_NICKNAME": "Il tuo Nickname:",
@@ -27,7 +28,9 @@
     "PIECES": "Pedine",
     "TURN": "Turno",
     "WAITING_STATUS": "Attesa",
-    "RECENT_MOVES": "Mosse Recenti"
+    "RECENT_MOVES": "Mosse Recenti",
+    "WHITE_TURN_ERROR": "È il turno del Bianco!",
+    "BLACK_TURN_ERROR": "È il turno del Nero!"
   },
   "BOT": {
     "OPTIONS": "Opzioni Bot",
@@ -42,7 +45,9 @@
     "THINKING": "Il bot sta pensando...",
     "CAPTURING": "Catturando...",
     "YOU_WON": "Hai vinto la partita!",
-    "BOT_WON": "Il bot ha vinto la partita!"
+    "BOT_WON": "Il bot ha vinto la partita!",
+    "YOUR_TURN_ERROR": "È il tuo turno!",
+    "BOT_TURN_ERROR": "È il turno del bot! Attendere la sua mossa..."
   },
   "MENU": {
     "SELECT_MODE": "Seleziona Modalità di Gioco",
@@ -79,29 +84,39 @@
   },
   "FOOTER": {
     "COPYRIGHT": "© {{year}} OnlineCheckers.org",
-    "OUR_TEAM": "Il Nostro Team",
+    "OUR_TEAM": "Contatti",
     "TAGLINE": "Gioca a dama online con amici o contro il computer."
   },
   "RULES": {
-    "TITLE": "Dama Italiana - Regole e Come Giocare",
-    "INTRODUCTION": "La Dama Italiana è una variante tradizionale del gioco della dama, giocata su una scacchiera 8x8 con 12 pedine per giocatore. È la versione ufficiale regolamentata dalla Federazione Italiana Dama (FID) e giocata nei tornei in Italia.",
-    "INTRO_TEXT": "Con regole uniche che la distinguono da altre varianti europee, la Dama Italiana ha una lunga tradizione nella cultura italiana.",
-    "HISTORY_TITLE": "Storia della Dama Italiana",
-    "HISTORY_TEXT_1": "La Dama Italiana ha una storia ricca che si intreccia con la cultura italiana attraverso i secoli.",
-    "HISTORY_TEXT_2": "Le prime tracce documentate risalgono al XV secolo, quando varianti del gioco erano già diffuse nelle corti rinascimentali italiane.",
-    "HISTORY_TEXT_3": "Durante il periodo del Risorgimento, il gioco divenne un passatempo popolare in caffè e circoli, luoghi di incontro e discussione.",
-    "HISTORY_TEXT_4": "Nel 1924, con la fondazione della Federazione Italiana Dama (FID), il gioco acquisì regole standardizzate e riconoscimento ufficiale.",
+    "TITLE": "Dama Inglese - Regole e Come Giocare",
+    "INTRODUCTION": "La Dama Inglese è un gioco da tavolo tradizionale giocato su una scacchiera 8x8 con 12 pedine per giocatore. È una delle varianti di dama più diffuse al mondo.",
+    "INTRO_TEXT": "Facile da imparare ma ricca di strategie, la Dama Inglese è un passatempo amato nei paesi anglofoni da generazioni.",
+    "HISTORY_TITLE": "Storia della Dama Inglese",
+    "HISTORY_TEXT_1": "La Dama Inglese ha una lunga storia che risale al periodo medievale in Inghilterra e in altre parti d'Europa.",
+    "HISTORY_TEXT_2": "Il primo libro sul gioco fu pubblicato nel 1756 da William Payne, intitolato 'An Introduction to the Game of Draughts'.",
+    "HISTORY_TEXT_3": "La popolarità del gioco si diffuse in tutto l'Impero Britannico e si stabilì particolarmente negli Stati Uniti, dove è comunemente conosciuto come 'Checkers'.",
+    "HISTORY_TEXT_4": "Nel 1847 si tenne il primo campionato mondiale di dama, stabilendo il gioco come un'attività competitiva seria.",
     "BOARD_TITLE": "La Scacchiera",
-    "BOARD_TEXT_1": "La Dama Italiana si gioca su una scacchiera tradizionale 8x8 con 64 caselle, utilizzando solo le 32 caselle scure.",
-    "BOARD_TEXT_2": "All'inizio della partita, ogni giocatore dispone le proprie 12 pedine sulle caselle scure delle prime tre file davanti a sé.",
+    "BOARD_TEXT_1": "La Dama Inglese si gioca su una scacchiera standard 8x8 con 64 caselle, utilizzando solo le 32 caselle scure.",
+    "BOARD_TEXT_2": "Ogni giocatore inizia con 12 pedine posizionate sulle caselle scure delle prime tre file più vicine a loro.",
     "MOVEMENT_TITLE": "Movimento e Cattura",
     "MOVEMENT_TEXT_1": "Le pedine si muovono in diagonale avanti di una casella alla volta. Non possono muoversi all'indietro fino a quando non diventano dame.",
-    "MOVEMENT_TEXT_2": "La cattura avviene saltando sopra una pedina avversaria verso una casella vuota. La pedina saltata viene rimossa dal gioco.",
-    "MOVEMENT_TEXT_3": "Se dopo una cattura è possibile effettuarne altre, il giocatore deve continuare la sequenza con la stessa pedina fino a quando non sono più possibili ulteriori catture.",
-    "MOVEMENT_TEXT_4": "Quando sono possibili più sequenze di cattura, è obbligatorio scegliere quella che cattura il maggior numero di pedine. In caso di parità, si deve preferire la sequenza che cattura più dame.",
+    "MOVEMENT_TEXT_2": "La cattura avviene saltando sopra una pedina avversaria verso una casella vuota direttamente oltre. La pedina saltata viene rimossa dalla scacchiera.",
+    "MOVEMENT_TEXT_3": "Se dopo una cattura è possibile effettuarne altre, il giocatore deve continuare la sequenza con la stessa pedina fino a quando non sono più possibili ulteriori catture (salti multipli).",
+    "MOVEMENT_TEXT_4": "Se un giocatore ha l'opportunità di catturare, deve farlo. Se sono disponibili più sequenze di cattura, il giocatore può scegliere qualsiasi sequenza valida, indipendentemente da quante pedine vengono catturate.",
     "KINGS_TITLE": "Le Dame",
-    "KINGS_TEXT_1": "Una pedina diventa dama quando raggiunge l'ultima traversa della scacchiera avversaria. Viene contrassegnata raddoppiando la pedina.",
-    "KINGS_TEXT_2": "A differenza della variante internazionale, nella Dama Italiana una dama può muoversi solo di una casella diagonale in qualsiasi direzione (avanti o indietro).",
-    "KINGS_TEXT_3": "Una dama cattura come una pedina normale, spostandosi di una sola casella oltre la pedina catturata, ma può farlo in tutte le direzioni diagonali."
+    "KINGS_TEXT_1": "Una pedina diventa dama quando raggiunge l'ultima fila sul lato avversario della scacchiera. Di solito viene incoronata posizionando una seconda pedina sopra di essa.",
+    "KINGS_TEXT_2": "Una dama può muoversi in diagonale sia avanti che indietro, ma si muove comunque di una sola casella alla volta tranne quando cattura.",
+    "KINGS_TEXT_3": "Le dame catturano nello stesso modo delle pedine normali, ma possono farlo in tutte e quattro le direzioni diagonali. Come le pedine normali, le dame devono effettuare tutte le catture disponibili."
+  },
+  "ERRORS": {
+    "GAME_NOT_FOUND": "La partita che stai cercando di unire non esiste.",
+    "GAME_FULL": "Questa partita ha già due giocatori e non può accettare altri partecipanti.",
+    "SELF_PLAY_NOT_ALLOWED": "Non puoi giocare contro te stesso nella modalità online. Utilizza l'opzione 'Gioca in Locale' dal menu principale.",
+    "SERVER_ERROR": "Si è verificato un errore durante la connessione al server. Riprova più tardi.",
+    "JOIN_FAILED": "Impossibile unirsi alla partita. Riprova.",
+    "UNKNOWN_ERROR": "Si è verificato un errore sconosciuto. Riprova più tardi.",
+    "GO_TO_LOCAL_MODE": "Vai alla Modalità Locale",
+    "CREATE_NEW_GAME": "Crea Nuova Partita"
   }
 }

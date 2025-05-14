@@ -7,8 +7,8 @@ import { GameService } from '../../../services/game.service';
 import { ActivatedRoute } from '@angular/router';
 import { DOCUMENT } from '@angular/common';
 import { interval, Subscription } from 'rxjs';
-import {MoveP} from '../../../model/entities/MoveP';
-import {Component, Inject, OnDestroy, OnInit} from '@angular/core';
+import { MoveP } from '../../../model/entities/MoveP';
+import { Component, Inject, OnDestroy, OnInit } from '@angular/core';
 import { AudioService } from '../../../services/audio.service';
 import { TranslateModule } from '@ngx-translate/core';
 import { RestartService, PlayerRestartStatus } from '../../../services/restart.service';
@@ -52,7 +52,6 @@ interface Move {
   captured?: { row: number, col: number }[];
 }
 
-
 @Component({
   selector: 'app-online-board',
   imports: [
@@ -83,6 +82,9 @@ export class OnlineBoardComponent implements OnInit, OnDestroy {
   moves: Move[] = [];
   gameID: string = '';
   pollingSubscription: Subscription | null = null;
+
+  piecesWithMoves: { row: number, col: number }[] = [];
+  piecesWithoutMoves: { row: number, col: number }[] = [];
 
   gameOver: boolean = false;
   showGameOverModal: boolean = false;
@@ -115,6 +117,7 @@ export class OnlineBoardComponent implements OnInit, OnDestroy {
   showRestartRequestedMessage: boolean = false;
   waitingForOpponentRestart: boolean = false;
   isResetting: boolean = false;
+  hasClickedRestart: boolean = false;
 
   // Proprietà per tenere traccia dello stato di copia del link della partita
   linkCopied: boolean = false;
@@ -323,6 +326,9 @@ export class OnlineBoardComponent implements OnInit, OnDestroy {
    * Updates the game state based on the response from the server
    */
   updateGameState(response: GameResponse) {
+    // Reset move indicators
+    this.resetMoveIndicators();
+    
     // Salva lo stato precedente per confronto
     const oldBoard = this.board ? JSON.parse(JSON.stringify(this.board)) : null;
     const oldTurn = this.currentPlayer;
@@ -425,6 +431,7 @@ export class OnlineBoardComponent implements OnInit, OnDestroy {
 
     return isPlayerTurn;
   }
+  
   /**
    * Initialize the game board with pieces in starting positions
    */
@@ -490,7 +497,7 @@ export class OnlineBoardComponent implements OnInit, OnDestroy {
    * Handles click events on board cells
    * @param row - Row index of the clicked cell
    * @param col - Column index of the clicked cell
-  */
+   */
   onCellClick(row: number, col: number): void {
     if (this.gameOver) return;
 
@@ -504,12 +511,18 @@ export class OnlineBoardComponent implements OnInit, OnDestroy {
 
     // If a highlighted cell is clicked, it means making a move
     if (this.isHighlight(row, col) && this.selectedCell) {
+      // Reset indicators before making move
+      this.resetMoveIndicators();
+      
       this.makeMove(this.selectedCell.row, this.selectedCell.col, row, col);
       return;
     }
 
     // Clear previous highlights if clicking on a new cell
     this.highlightedCells = [];
+    
+    // Reset any previous move indicators
+    this.resetMoveIndicators();
 
     // If the cell has no piece or it's not the current player's piece, do nothing
     if (!cell.hasPiece || cell.pieceColor !== this.currentPlayer) {
@@ -520,7 +533,17 @@ export class OnlineBoardComponent implements OnInit, OnDestroy {
     this.selectedCell = { row, col };
 
     // Get and show all possible moves
-    this.highlightedCells = this.getValidMoves(row, col);
+    const validMoves = this.getValidMoves(row, col);
+    this.highlightedCells = validMoves;
+    
+    // Check if this piece has moves or not
+    if (validMoves.length > 0) {
+      // Add the clicked piece with moves to the list
+      this.piecesWithMoves.push({ row, col });
+    } else {
+      // Only add the clicked piece without moves to the list
+      this.piecesWithoutMoves.push({ row, col });
+    }
   }
 
   /**
@@ -748,6 +771,10 @@ export class OnlineBoardComponent implements OnInit, OnDestroy {
 
       this.selectedCell = { row: toRow, col: toCol };
       this.highlightedCells = further.map(m => m.to);
+      
+      // Reset indicators except for the current piece
+      this.resetMoveIndicators();
+      this.piecesWithMoves.push({ row: toRow, col: toCol });
 
       // Se è diventata dama, aggiorna l'interfaccia
       if (becomesKing) {
@@ -807,6 +834,9 @@ export class OnlineBoardComponent implements OnInit, OnDestroy {
       this.highlightedCells = [];
       this.isCapturingMultiple = false;
       this.capturePath = []; // Reset percorso di cattura
+      
+      // Reset indicators 
+      this.resetMoveIndicators();
 
       // Cambia turno e controlla fine partita
       this.currentPlayer = this.currentPlayer === 'white' ? 'black' : 'white';
@@ -814,27 +844,60 @@ export class OnlineBoardComponent implements OnInit, OnDestroy {
     }
   }
 
-  private buildCapturePathFromMoves(): string[] {
-    const path: string[] = [];
-
-    // Filtra solo le mosse dall'inizio della catena multipla
-    const relevantMoves = this.moves.filter((move, index) => {
-      // Trova l'indice dove inizia la catena attuale
-      const startIndex = this.moves.findIndex(m =>
-        m.from.row === this.captureChainStart?.row &&
-        m.from.col === this.captureChainStart?.col
-      );
-      return index >= startIndex;
-    });
-
-    // Estrai solo le posizioni di destinazione
-    relevantMoves.forEach(move => {
-      path.push(`${move.to.row}${move.to.col}`);
-    });
-
-    return path;
+  /**
+   * Check all pieces of the current player to determine which have moves
+   */
+  checkAllPiecesForMoves(): void {
+    // First, clear the arrays
+    this.piecesWithMoves = [];
+    this.piecesWithoutMoves = [];
+    
+    // Scan the entire board to find pieces with and without moves
+    for (let r = 0; r < 8; r++) {
+      for (let c = 0; c < 8; c++) {
+        const cell = this.board[r][c];
+        
+        // Only check the current player's pieces
+        if (cell.hasPiece && cell.pieceColor === this.currentPlayer) {
+          const moves = this.getValidMoves(r, c);
+          
+          if (moves.length > 0) {
+            this.piecesWithMoves.push({ row: r, col: c });
+          } else {
+            this.piecesWithoutMoves.push({ row: r, col: c });
+          }
+        }
+      }
+    }
   }
 
+  /**
+   * Determines if a cell has a piece with available moves
+   * @param row - Row index of the cell
+   * @param col - Column index of the cell
+   * @returns True if the cell has a piece with available moves
+   */
+  hasAvailableMoves(row: number, col: number): boolean {
+    return this.piecesWithMoves.some(piece => piece.row === row && piece.col === col);
+  }
+  
+  /**
+   * Determines if a cell has a piece with no available moves
+   * @param row - Row index of the cell
+   * @param col - Column index of the cell
+   * @returns True if the cell has a piece with no available moves
+   */
+  hasNoAvailableMoves(row: number, col: number): boolean {
+    return this.piecesWithoutMoves.some(piece => piece.row === row && piece.col === col);
+  }
+  
+  /**
+   * Resets the move indicators
+   */
+  resetMoveIndicators(): void {
+    this.piecesWithMoves = [];
+    this.piecesWithoutMoves = [];
+  }
   /**
    * Checks if the game is over and determines the winner
    */
@@ -1134,15 +1197,11 @@ export class OnlineBoardComponent implements OnInit, OnDestroy {
           isKing: piece.isKing
         };
 
-        // MIGLIORAMENTO: Forza un aggiornamento dell'interfaccia immediatamente
+        // Forza un aggiornamento dell'interfaccia immediatamente
         // se la pedina è diventata dama, così da mostrare la corona
         if (becameKing) {
           // Creiamo una copia della scacchiera per forzare Angular a rilevare la modifica
           this.board = [...this.board.map(row => [...row])];
-
-          // In alternativa, possiamo usare il change detector di Angular
-          // ma questo richiede l'injection di ChangeDetectorRef nel costruttore
-          // this.changeDetector.detectChanges();
         }
 
         // Riproduci il suono di cattura
@@ -1171,8 +1230,19 @@ export class OnlineBoardComponent implements OnInit, OnDestroy {
     if (this.isResetting) return;
 
     this.restartService.getRestartStatus(this.gameID).subscribe({
-      next: (status) => {
-        this.restartStatus = status;
+        next: (status) => {
+          this.restartStatus = status;
+
+          const myRestartFlag = this.playerTeam === 'WHITE' ? status.restartW : status.restartB;
+          const opponentRestartFlag = this.playerTeam === 'WHITE' ? status.restartB : status.restartW;
+          
+          if (opponentRestartFlag && !myRestartFlag && this.hasClickedRestart) {
+            console.log("Rilevata incoerenza: l'avversario ha richiesto il riavvio, noi abbiamo cliccato ma il server non l'ha registrato");
+            
+            // Invia di nuovo la richiesta di riavvio
+            this.requestRestart();
+            return;
+          }
 
         // Controlla se il giocatore attuale ha richiesto il riavvio
         if (this.playerTeam === 'WHITE' && status.restartW) {
@@ -1194,9 +1264,6 @@ export class OnlineBoardComponent implements OnInit, OnDestroy {
                 this.restartPollingSubscription.unsubscribe();
               }
               console.log("Reset della partita completato lato server");
-
-
-
 
               // Riproduci suono di reset partita
               this.audioService.playMoveSound();
@@ -1272,28 +1339,28 @@ export class OnlineBoardComponent implements OnInit, OnDestroy {
    * Metodo per richiedere il riavvio
    */
   requestRestart() {
-    if (!this.gameID || !this.restartStatus || this.waitingForOpponentRestart) return;
-
-    // Crea una copia dello stato attuale
-    let updatedStatus = { ...this.restartStatus };
-
-    // Aggiorna lo stato in base al team del giocatore
-    if (this.playerTeam === 'WHITE') {
-      updatedStatus.restartW = true;
-    } else if (this.playerTeam === 'BLACK') {
-      updatedStatus.restartB = true;
+    // Segna che abbiamo cliccato il pulsante Rigioca
+    this.hasClickedRestart = true;
+    
+    // Verifica che restartStatus esista
+    if (!this.restartStatus) {
+      console.error('Impossibile richiedere il riavvio: stato di riavvio non disponibile');
+      return;
     }
-
-    // Invia l'aggiornamento al server
+    
+    // Crea una copia corretta dell'oggetto, assicurandoci che tutte le proprietà siano definite
+    const updatedStatus: PlayerRestartStatus = {
+      gameID: this.restartStatus.gameID,
+      nicknameB: this.restartStatus.nicknameB,
+      nicknameW: this.restartStatus.nicknameW,
+      restartB: this.playerTeam === 'BLACK' ? true : this.restartStatus.restartB,
+      restartW: this.playerTeam === 'WHITE' ? true : this.restartStatus.restartW
+    };
+    
     this.restartService.updateRestartStatus(updatedStatus).subscribe({
       next: () => {
         this.waitingForOpponentRestart = true;
         this.showRestartRequestedMessage = true;
-
-        // Nascondi il messaggio dopo alcuni secondi
-        setTimeout(() => {
-          this.showRestartRequestedMessage = false;
-        }, 3000);
       },
       error: (err) => {
         console.error('Errore nell\'aggiornamento dello stato di riavvio:', err);
